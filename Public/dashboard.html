@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-Up Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        .filter {
+            min-width: 200px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        #applyFilters {
+            background: #4e73df;
+            color: white;
+        }
+        #resetFilters {
+            background: #e74a3b;
+            color: white;
+        }
+        #fixDates {
+            background: #28a745;
+            color: white;
+            margin-left: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 400px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .Regular { background: #d4edda; color: #155724; }
+        .Irregular { background: #fff3cd; color: #856404; }
+        .Visitor { background: #d1ecf1; color: #0c5460; }
+        .First\ Timer { background: #f8d7da; color: #721c24; }
+        @media (max-width: 768px) {
+            .filters { flex-direction: column; }
+            .filter { width: 100%; }
+            button { width: 100%; margin: 5px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Follow-Up Dashboard</h1>
+        
+        <div class="filters">
+            <select id="timeFilter" class="filter">
+                <option value="7">Last 7 Days</option>
+                <option value="30" selected>Last 30 Days</option>
+                <option value="90">Last Quarter</option>
+                <option value="365">Last Year</option>
+                <option value="all">All Time</option>
+            </select>
+            
+            <select id="statusFilter" class="filter" multiple>
+                <option value="Irregular">Irregular</option>
+                <option value="Regular">Regular</option>
+                <option value="Visitor">Visitor</option>
+                <option value="First Timer">First Timer</option>
+            </select>
+            
+            <button id="applyFilters">Apply Filters</button>
+            <button id="resetFilters">Reset</button>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="followupsChart"></canvas>
+        </div>
+        
+        <div class="results-container">
+            <h3 id="resultsCount">Loading...</h3>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Follow-Up Date</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    <tr><td colspan="3">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <script>
+        let followupsChart = null;
+
+        $(document).ready(function() {
+            // Initialize Select2
+            $('#statusFilter').select2({
+                placeholder: "Filter by Status",
+                allowClear: true
+            });
+
+            // Load initial data
+            applyFilters();
+
+            // Event Listeners
+            $('#applyFilters').click(applyFilters);
+            $('#resetFilters').click(resetFilters);
+            $('#fixDates').click(fixFutureDates);
+        });
+
+        function resetFilters() {
+            $('#timeFilter').val('30');
+            $('#statusFilter').val(null).trigger('change');
+            applyFilters();
+        }
+
+        async function applyFilters() {
+            try {
+                const timeRange = $('#timeFilter').val();
+                const selectedStatuses = $('#statusFilter').val() || [];
+
+                $('#resultsBody').html('<tr><td colspan="3">Loading...</td></tr>');
+
+                const response = await axios.get('/api/followups', {
+                    params: {
+                        range: timeRange,
+                        status: selectedStatuses.join(',')
+                    }
+                });
+
+                const data = response.data;
+                displayResults(data);
+                updateChart(data);
+
+            } catch (error) {
+                console.error("Error loading data:", error);
+                $('#resultsBody').html(`
+                    <tr>
+                        <td colspan="3" style="color: red; text-align: center;">
+                            Failed to load data: ${error.message}
+                        </td>
+                    </tr>
+                `);
+                $('#resultsCount').text('');
+            }
+        }
+
+        function displayResults(data) {
+            const tbody = $('#resultsBody').empty();
+            $('#resultsCount').text(data.length === 0 ? 'No results found' : `Found ${data.length} follow-up(s)`);
+
+            if (data.length === 0) {
+                tbody.append('<tr><td colspan="3" style="text-align: center;">No data matches your filters</td></tr>');
+                return;
+            }
+
+            data.forEach(item => {
+                const statusClass = item.status?.replace(' ', '\\ ') || 'Unknown';
+                tbody.append(`
+                    <tr>
+                        <td>${item.name || 'N/A'}</td>
+                        <td><span class="status-badge ${statusClass}">${item.status || 'Unknown'}</span></td>
+                        <td>${formatDate(item.dateFollowedUp) || 'Not recorded'}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        function updateChart(data) {
+            const ctx = document.getElementById('followupsChart').getContext('2d');
+            const statusCounts = {};
+            data.forEach(item => {
+                const status = item.status || 'Unknown';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+
+            const labels = Object.keys(statusCounts);
+            const values = Object.values(statusCounts);
+
+            if (followupsChart) followupsChart.destroy();
+
+            followupsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Follow-Ups',
+                        data: values,
+                        backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Follow-Ups by Status', font: { size: 16 } },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Not recorded';
+            const date = new Date(dateStr);
+            const today = new Date();
+            if (date > today) return 'Future date';
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        async function fixFutureDates() {
+            if (!confirm('This will convert all 2025 dates to 2024. Continue?')) return;
+
+            try {
+                const res = await axios.get('/fix-dates');
+                alert(res.data.message || 'Dates fixed!');
+                $('#fixDates').fadeOut();
+                applyFilters();
+            } catch (err) {
+                const msg = err.response?.data?.error || err.message;
+                alert('Fix failed: ' + msg);
+            }
+        }
+    </script>
+</body>
+</html>
