@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCCG TOP - Welcome Message</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="message.css">
+
+</head>
+<body>
+    <header>
+        <img src="images/Rccg_logo.png" class="church-logo" alt="RCCG Logo">
+    </header>
+
+    <div class="message-container">
+        <h2>Welcome To Church</h2>
+        
+        <form id="messageForm">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="Enter your phone number" required>
+            </div>
+            
+            <button type="submit" class="submit-btn"> Check in</button>
+            <div id="message-status"></div>
+        </form>
+    </div>
+
+    <p class="footer-text">RCCG Tabernacle of Praise &copy; <span id="year"></span></p>
+
+    <script>
+
+        const API_URL = 'http://localhost:3000/api/messages';
+        // Set current year in footer
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        document.getElementById('messageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+
+        // Load messages on page load
+        document.addEventListener('DOMContentLoaded', loadMessages);
+ 
+            const statusElement = document.getElementById('message-status');
+            statusElement.style.display = 'none';
+            
+            const name = document.getElementById('name').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            
+            // Simple validation
+            if (!name || !phoneNumber) {
+                statusElement.textContent = 'Please fill in all fields';
+                statusElement.className = 'error';
+                statusElement.style.display = 'block';
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
+            
+            fetch('/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    phoneNumber: phoneNumber
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    statusElement.textContent = 'Thank you for coming!';
+                    statusElement.className = 'success';
+                    document.getElementById('messageForm').reset();
+                } else {
+                    statusElement.textContent = data.message || 'Failed to send message';
+                    statusElement.className = 'error';
+                }
+                statusElement.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusElement.textContent = 'An error occurred. Please try again.';
+                statusElement.className = 'error';
+                statusElement.style.display = 'block';
+            })
+            .finally(() => {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        });
+
+        async function loadMessages() {
+            try {
+                const response = await axios.get(API_URL);
+                displayMessages(response.data);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+    </script>
+</body>
+</html>

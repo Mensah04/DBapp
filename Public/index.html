@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCCG TOP Database</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+<body>
+    <div class="floating-cross">✝</div>
+    <div class="floating-cross">✝</div>
+    <div class="floating-cross">✝</div> 
+    <header>
+        <img src="images/Rccg_logo.png" class="dynamic-image" alt="Floating Logo">
+
+    </header>
+    <div class="container">
+        <h1>Create New Member</h1>
+        
+            <form id="userForm">
+                <input type="text" id="name" placeholder="Name" required minlength="3" maxlength="50" />
+                <input type="text" id="phone" placeholder="Phone" required pattern="\d{10,13}" />
+                <input type="text" id="address" placeholder="Address" required minlength="5" maxlength="100" />
+                <input type="email" id="email" placeholder="Email" required />
+                <input type="date" id="date" placeholder="Date" required />
+                <input type="text" id="comment" placeholder="Comment" required minlength="3" maxlength="250" />
+                <button type="submit">Add Member</button>
+        </form>
+        
+        <h2>Search For Member</h2>
+        <form id="searchForm">
+            <!-- search form fields here -->
+            <input type="text" id="searchQuery" placeholder="Search by Name" required />
+            <button type="submit">Search</button>
+        </form>
+        
+        <h2>RCCG TOP DATABASE</h2>
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th class="address-column">Address</th>
+                    <th>Email Address</th>
+                    <th class="date-column">Date</th>
+                    <th>Comment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <form action="follow-up.html">
+            <button type="submit">Go to Follow-Up page</button>
+        </form>
+        </div>
+        <script>
+
+        const serverUrl = 'http://localhost:3000/api/users';
+        
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const date = document.getElementById('date').value;
+            const comment = document.getElementById('comment').value.trim();
+            
+            if (!validateInputs(name, phone, address, email, comment)) {
+                alert('Please ensure all fields meet the required criteria.');
+                return;
+            }
+            
+            try {
+                await axios.post(serverUrl, { name, phone, address, email, date, comment });
+                await loadUsers();
+                alert('Member added successfully');
+            } catch (error) {
+                if (error.response && error.response.data && error.response.data.message) {
+                    alert(error.response.data.message);
+                } else {
+                    alert('An error occurred while adding the member');
+                }
+            }
+        });
+        
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('searchQuery').value;
+            await searchUsers(query);
+        });
+
+        function validateInputs(name, phone, address, email, comment) {
+            if (!/^[A-Za-z\s]+$/.test(name)) {
+                alert('Name should only contain alphabetic characters and spaces.');
+                return false;
+            }
+            if (name.length < 3 || name.length > 50) {
+                alert('Name should be between 3 and 50 characters long.');
+                return false;
+            }
+            if (!/^\d{10,15}$/.test(phone)) {
+                alert('Phone should be between 10 and 15 digits long.');
+                return false;
+            }
+            if (address.length < 5 || address.length > 100) {
+                alert('Address should be between 5 and 100 characters long.');
+                return false;
+            }
+            if (!email.includes('@')) {
+                alert('Please enter a valid email address.');
+                return false;
+            }
+            if (comment.length < 3 || comment.length > 250) {
+                alert('Comment should be between 3 and 250 characters long.');
+                return false;
+            }
+            return true;
+        }
+        document.addEventListener('DOMContentLoaded', loadUsers);
+        async function loadUsers() {
+            try {
+                const res = await axios.get(serverUrl);
+                const users = res.data;
+                const tableBody = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+                users.forEach(user => {  
+                    const row = tableBody.insertRow(-1);  
+                    row.insertCell(0).textContent = user.name;
+                    row.insertCell(1).textContent = user.phone;
+                    row.insertCell(2).textContent = user.address;
+                    row.insertCell(3).textContent = user.email;
+                    row.insertCell(4).textContent = user.date;
+                    row.insertCell(5).textContent = user.comment;
+                    const actions = row.insertCell(6);
+                    actions.innerHTML = `
+                        <button class="edit" onclick="editUser('${user._id}')">Edit</button>
+                        <button onclick="deleteUser('${user._id}')">Delete</button>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading members:', error.message);
+                alert('An error occurred while loading members');
+            }
+        }
+
+        async function searchUsers(query) {
+            try {
+                const res = await axios.get(`${serverUrl}/search?name=${query}`);
+                const users = res.data;
+                const tableBody = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+                users.forEach(user => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = user.name;
+                    row.insertCell(1).textContent = user.phone;
+                    row.insertCell(2).textContent = user.address;
+                    row.insertCell(3).textContent = user.email;
+                    row.insertCell(4).textContent = user.date;
+                    row.insertCell(5).textContent = user.comment;
+                    const actions = row.insertCell(6);
+                    actions.innerHTML = `
+                        <button onclick="editUser('${user._id}')">Edit</button>
+                        <button onclick="deleteUser('${user._id}')">Delete</button>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error searching members:', error.message);
+                alert('An error occurred while searching members');
+            }
+        }
+
+        async function editUser(id) {
+            const name = prompt('Enter new name:');
+            const phone = prompt('Enter new phone number:');
+            const address = prompt('Enter new address:');
+            const email = prompt('Enter new email:');
+            const date = prompt('Enter new date:');
+            const comment = prompt('Enter new comment:');
+
+            try {
+                await axios.put(`${serverUrl}/${id}`, { comment, date });
+                alert('Member updated successfully');
+                await loadUsers();
+            } catch (error) {
+                console.error('Error updating members:', error.message);
+                alert('An error occurred while updating the member');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (confirm('Are you sure you want to delete this member?')) {
+            try {
+                await axios.delete(`${serverUrl}/${id}`);
+                alert('User deleted successfully');
+                loadUsers();
+            } catch (error) {
+                console.error('Error deleting user:', error.message);
+                alert('An error occurred while deleting the member');
+            }
+        }
+    }
+
+        async function deleteFollowUp(id) {
+            if (confirm('Are you sure you want to delete this follow-up?')) {
+                try {
+                    await axios.delete(`${serverUrl}/${id}`);
+                    alert('Follow-Up deleted successfully');
+                    loadFollowUps();
+                } catch (error) {
+                    console.error('Error deleting follow-up:', error.message);
+                    alert('An error occurred while deleting the follow-up');
+                }
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>

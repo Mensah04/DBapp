@@ -1,0 +1,159 @@
+:root {
+    --primary: #4a6fa5;
+    --secondary: #166088;
+    --accent: #4fc3f7;
+    --light: #f8f9fa;
+    --dark: #343a40;
+    --success: #4caf50;
+    --error: #e63946;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819') center/cover no-repeat fixed;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--dark);
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 0;
+}
+
+.login-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 450px;
+    padding: 3rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.church-logo {
+    width: 100px;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--secondary);
+    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+
+h2 {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--primary);
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.form-group {
+    margin-bottom: 1.8rem;
+    text-align: left;
+    position: relative;
+}
+
+input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background-color: #f8f9fa;
+}
+
+input:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2);
+    background-color: white;
+}
+
+input::placeholder {
+    color: #999;
+}
+
+.submit-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 1rem;
+}
+
+.submit-btn:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+#error {
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    min-height: 1.5rem;
+    color: var(--error);
+    font-weight: 500;
+}
+
+.footer-text {
+    margin-top: 2.5rem;
+    font-size: 0.85rem;
+    color: #666;
+    letter-spacing: 0.3px;
+}
+
+.input-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 2rem;
+        margin: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2 {
+        font-size: 1rem;
+    }
+}

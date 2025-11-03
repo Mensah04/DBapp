@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-Up Form</title>
+    <link rel="stylesheet" href="followup.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Fixed Header with Logo -->
+    <header class="main-header">
+        <div class="header-content">
+            <img src="images/Rccg_logo.png" alt="Floating logo" class="dynamic-image">
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Form Section -->
+        <form id="followUpForm">
+            <h1>Follow-Up Form</h1>
+            <div class="form-group">
+                <input type="text" id="name" placeholder="Name" required minlength="3" maxlength="50" />
+            </div>
+            <div class="form-group">
+                <select id="status" required>
+                    <option value="">Select Member Status</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Irregular">Irregular</option>
+                    <option value="First Timer">First Timer</option>
+                    <option value="Visitor">Visitor</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <input type="text" id="recentFollowUp" placeholder="Recent Follow-Up" required minlength="3" maxlength="250" />
+            </div>
+            <div class="form-group">
+                <input type="text" id="byWho" placeholder="By Whom" required minlength="3" maxlength="50" />
+            </div>
+            <div class="form-group">
+                <input type="date" id="dateFollowedUp" placeholder="Date Followed Up" required />
+            </div>
+            <div class="form-group">
+                <input id="phoneNumber" placeholder="Enter Phone Number" required type="tel"/>
+            </div>
+            <button type="submit">Submit Follow-Up</button>
+        </form>
+
+        <!-- Follow-Ups Table -->
+        <h2>Submitted Follow-Ups</h2>
+        <table id="followUpTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Recent Follow-Up</th>
+                    <th>By Whom</th>
+                    <th>Date Followed Up</th>
+                    <th>Phone Number</th> 
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <form action="dashboard.html">
+                <button type="submit">Go to Dashboard</button>
+            </form>
+            <form action="message.html">
+                <button type="submit">Go to Messaging</button>
+            </form>
+        </div>
+    </div>
+<script>
+    const serverUrl = '/api/followups';
+
+    // Set max date to today
+    document.getElementById('dateFollowedUp').max = new Date().toISOString().split('T')[0];
+
+    document.getElementById('followUpForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            name: document.getElementById('name').value.trim(),
+            status: document.getElementById('status').value,
+            recentFollowUp: document.getElementById('recentFollowUp').value.trim(),
+            byWho: document.getElementById('byWho').value.trim(),
+            dateFollowedUp: document.getElementById('dateFollowedUp').value,
+            phoneNumber: document.getElementById('phoneNumber').value.trim()
+        };
+
+        try {
+            const res = await axios.post(serverUrl, formData);
+            alert('✅ Follow-up saved!');
+            e.target.reset();
+            addFollowUpToTable(res.data);
+        } catch (err) {
+            alert('❌ ' + (err.response?.data?.message || 'Save failed'));
+        }
+    });
+
+    function addFollowUpToTable(followUp) {
+        const tbody = document.querySelector('#followUpTable tbody');
+        const row = tbody.insertRow(0);
+        const statusClass = (followUp.status || 'Unknown').replace(/\s+/g, '-').toLowerCase();
+        
+        row.innerHTML = `
+            <td>${followUp.name || 'N/A'}</td>
+            <td><span class="status-badge ${statusClass}">${followUp.status || 'Unknown'}</span></td>
+            <td>${followUp.recentFollowUp || '—'}</td>
+            <td>${followUp.byWho || '—'}</td>
+            <td>${followUp.dateFollowedUp ? new Date(followUp.dateFollowedUp).toLocaleDateString() : '—'}</td>
+            <td>${followUp.phoneNumber || '—'}</td>
+            <td class="actions">
+                <button onclick="editFollowUp('${followUp._id}')" style="background:#007bff;color:white;">Edit</button>
+                <button onclick="deleteFollowUp('${followUp._id}')" style="background:#dc3545;color:white;">Delete</button>
+            </td>
+        `;
+    }
+
+    async function loadFollowUps() {
+        try {
+            console.log('Loading follow-ups...');
+            const res = await axios.get(`${serverUrl}?range=all`);  // ← FORCE ALL
+            const tbody = document.querySelector('#followUpTable tbody');
+            tbody.innerHTML = '';
+            
+            if (res.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">No follow-ups yet. Add one above!</td></tr>';
+                return;
+            }
+            
+            res.data.forEach(addFollowUpToTable);
+            console.log(`✅ Loaded ${res.data.length} follow-ups`);
+        } catch (err) {
+            console.error('Load error:', err);
+            const tbody = document.querySelector('#followUpTable tbody');
+            tbody.innerHTML = '<tr><td colspan="7" style="color:red;text-align:center;">Failed to load data</td></tr>';
+        }
+    }
+
+    async function editFollowUp(id) {
+    try {
+        console.log('Editing follow-up ID:', id);
+        
+        // Get current data
+        const response = await axios.get(`${serverUrl}/${id}`);
+        const current = response.data;
+        console.log('Current data:', current);
+        
+        // Collect updated values
+        const name = prompt('Name:', current.name);
+        const status = prompt('Status:', current.status);
+        const recentFollowUp = prompt('Recent Follow-Up:', current.recentFollowUp);
+        const byWho = prompt('By Whom:', current.byWho);
+        const dateFollowedUp = prompt('Date (YYYY-MM-DD):', current.dateFollowedUp);
+        const phoneNumber = prompt('Phone Number:', current.phoneNumber);
+
+        // Check if any field was cancelled
+        if (name === null || status === null || recentFollowUp === null || 
+            byWho === null || dateFollowedUp === null || phoneNumber === null) {
+            alert('Update cancelled');
+            return;
+        }
+
+        // Send update
+        const updateResponse = await axios.put(`${serverUrl}/${id}`, {
+            name,
+            status,
+            recentFollowUp,
+            byWho,
+            dateFollowedUp,
+            phoneNumber
+        });
+        
+        console.log('Update response:', updateResponse.data);
+        alert('✅ Follow-up updated successfully!');
+        await loadFollowUps();
+        
+    } catch (error) {
+        console.error('Edit error:', error);
+        let errorMessage = 'Failed to update follow-up';
+        if (error.response?.data?.message) {
+            errorMessage += ': ' + error.response.data.message;
+        }
+        alert('❌ ' + errorMessage);
+    }
+}
+
+// Make available globally
+window.editFollowUp = editFollowUp;
+    window.deleteFollowUp = async (id) => {
+        if (confirm('Delete this follow-up?')) {
+            try {
+                await axios.delete(`${serverUrl}/${id}`);
+                loadFollowUps();
+                alert('✅ Deleted!');
+            } catch (err) {
+                alert('❌ Delete failed');
+            }
+        }
+    };
+
+    // Load on page start
+    loadFollowUps();
+</script>
+</body>
+</html>
