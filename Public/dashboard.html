@@ -1,300 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Follow-Up Dashboard</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>RCCG TOP – Follow-up Dashboard</title>
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Axios -->
+     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <!-- Select2 (for better multi-select) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray: #64748b;
+            --light: #f1f5f9;
+            --dark: #0f172a;
+            --bg: #f8fafc;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            max-width: 1200px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+            margin: 0;
+            padding: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
             margin: 0 auto;
-            background: #f8f9fa;
-            color: #333;
         }
-        .dashboard-container {
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .kpi-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2rem;
         }
+
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.4rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .kpi-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.6rem;
+            color: var(--primary);
+        }
+
+        .kpi-value {
+            font-size: 2.1rem;
+            font-weight: 700;
+            margin: 0.3rem 0;
+        }
+
+        .kpi-label {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
         .filters {
             background: white;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 1.2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 2rem;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            gap: 1rem;
             align-items: center;
         }
-        .filter {
-            min-width: 200px;
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 14px;
+
+        .filter-group {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            align-items: center;
         }
-        button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: 0.2s;
-        }
-        #applyFilters {
-            background: #4e73df;
-            color: white;
-        }
-        #resetFilters {
-            background: #e74a3b;
-            color: white;
-        }
-        #fixDates {
-            background: #28a745;
-            color: white;
-            margin-left: 10px;
-        }
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        .chart-container {
-            background: white;
-            padding: 20px;
+
+        select, button {
+            padding: 0.7rem 1.1rem;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: 400px;
+            border: 1px solid #d1d5db;
+            font-size: 0.95rem;
         }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(37,99,235,0.08);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.4rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            height: 380px;
+        }
+
+        .chart-title {
+            margin: 0 0 1rem;
+            font-size: 1.15rem;
+            color: #374151;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
+
         th, td {
-            padding: 12px;
+            padding: 1rem 1.2rem;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e5e7eb;
         }
+
         th {
-            background-color: #f8f9fa;
+            background: #f8fafc;
             font-weight: 600;
-            color: #495057;
-        }
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
+            color: #4b5563;
             text-transform: uppercase;
+            font-size: 0.85rem;
         }
-        .Regular { background: #d4edda; color: #155724; }
-        .Irregular { background: #fff3cd; color: #856404; }
-        .Visitor { background: #d1ecf1; color: #0c5460; }
-        .First\ Timer { background: #f8d7da; color: #721c24; }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .Regular     { background:#d1fae5; color:#065f46; }
+        .Irregular   { background:#fee2e2; color:#991b1b; }
+        .Visitor     { background:#dbeafe; color:#1e40af; }
+        .First\ Timer { background:#fef3c7; color:#92400e; }
+
+        .action-btn {
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-sms   { background:#10b981; color:white; }
+        .btn-follow{ background:#3b82f6; color:white; }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
         @media (max-width: 768px) {
-            .filters { flex-direction: column; }
-            .filter { width: 100%; }
-            button { width: 100%; margin: 5px 0; }
+            .filters { flex-direction: column; align-items: stretch; }
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h1>Follow-Up Dashboard</h1>
-        
-        <div class="filters">
-            <select id="timeFilter" class="filter">
-                <option value="7">Last 7 Days</option>
-                <option value="30" selected>Last 30 Days</option>
-                <option value="90">Last Quarter</option>
-                <option value="365">Last Year</option>
-                <option value="all">All Time</option>
-            </select>
-            
-            <select id="statusFilter" class="filter" multiple>
-                <option value="Irregular">Irregular</option>
-                <option value="Regular">Regular</option>
-                <option value="Visitor">Visitor</option>
-                <option value="First Timer">First Timer</option>
-            </select>
-            
-            <button id="applyFilters">Apply Filters</button>
-            <button id="resetFilters">Reset</button>
-        </div>
 
-        <div class="chart-container">
-            <canvas id="followupsChart"></canvas>
+<div class="container">
+    <header>
+        <h1>RCCG TOP – Dashboard</h1>
+        <div>
+            <button class="btn-outline" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
-        
-        <div class="results-container">
-            <h3 id="resultsCount">Loading...</h3>
-            <table id="resultsTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Follow-Up Date</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody">
-                    <tr><td colspan="3">Loading data...</td></tr>
-                </tbody>
-            </table>
+    </header>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-users"></i></div>
+            <div class="kpi-value" id="totalFollowups">—</div>
+            <div class="kpi-label">Total Follow-ups</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-user-plus"></i></div>
+            <div class="kpi-value" id="newVisitors">—</div>
+            <div class="kpi-label">New Visitors (30d)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+            <div class="kpi-value" id="overdueFollowups">—</div>
+            <div class="kpi-label">Overdue Follow-ups</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-user-check"></i></div>
+            <div class="kpi-value" id="regularMembers">—</div>
+            <div class="kpi-label">Regular Attendees</div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
-    <script>
-        let followupsChart = null;
+    <!-- Filters -->
+    <div class="filters">
+        <div class="filter-group">
+            <label>Time Range:</label>
+            <select id="timeRange" class="filter">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 12 months</option>
+                <option value="all">All time</option>
+            </select>
+        </div>
 
-        $(document).ready(function() {
-            // Initialize Select2
-            $('#statusFilter').select2({
-                placeholder: "Filter by Status",
-                allowClear: true
-            });
+        <div class="filter-group">
+            <label>Status:</label>
+            <select id="statusFilter" class="filter" multiple>
+                <option value="Regular">Regular</option>
+                <option value="Irregular">Irregular</option>
+                <option value="Visitor">Visitor</option>
+                <option value="First Timer">First Timer</option>
+            </select>
+        </div>
 
-            // Load initial data
-            applyFilters();
+        <button id="applyFilters">Apply</button>
+        <button id="resetFilters" class="btn-outline">Reset</button>
+    </div>
 
-            // Event Listeners
-            $('#applyFilters').click(applyFilters);
-            $('#resetFilters').click(resetFilters);
-            $('#fixDates').click(fixFutureDates);
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-title">Follow-ups by Status</div>
+            <canvas id="statusChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Follow-up Trend (last 30 days)</div>
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Follow-up List -->
+    <div class="chart-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="margin:0;">Pending Follow-ups</h3>
+            <span id="resultsCount">Loading...</span>
+        </div>
+        <div id="loading" class="loading">Loading data...</div>
+        <table id="followupTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Last Follow-up</th>
+                    <th>Urgency</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let statusChart = null;
+    let trendChart = null;
+
+    $(document).ready(function() {
+        $('#statusFilter').select2({
+            placeholder: "Filter by Status",
+            allowClear: true,
+            closeOnSelect: false
         });
 
-        function resetFilters() {
-            $('#timeFilter').val('30');
+        loadDashboard();
+
+        $('#applyFilters').click(loadDashboard);
+        $('#resetFilters').click(() => {
+            $('#timeRange').val('30');
             $('#statusFilter').val(null).trigger('change');
-            applyFilters();
-        }
+            loadDashboard();
+        });
+    });
 
-        async function applyFilters() {
-            try {
-                const timeRange = $('#timeFilter').val();
-                const selectedStatuses = $('#statusFilter').val() || [];
+    async function loadDashboard() {
+        const loadingEl = document.getElementById('loading');
+        const tableEl = document.getElementById('followupTable');
+        const tbody = document.getElementById('tableBody');
 
-                $('#resultsBody').html('<tr><td colspan="3">Loading...</td></tr>');
+        loadingEl.style.display = 'block';
+        tableEl.style.display = 'none';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
 
-                const response = await axios.get('/api/followups', {
-                    params: {
-                        range: timeRange,
-                        status: selectedStatuses.join(',')
-                    }
-                });
+        try {
+            const range = document.getElementById('timeRange').value;
+            const statuses = $('#statusFilter').val() || [];
 
-                const data = response.data;
-                displayResults(data);
-                updateChart(data);
-
-            } catch (error) {
-                console.error("Error loading data:", error);
-                $('#resultsBody').html(`
-                    <tr>
-                        <td colspan="3" style="color: red; text-align: center;">
-                            Failed to load data: ${error.message}
-                        </td>
-                    </tr>
-                `);
-                $('#resultsCount').text('');
-            }
-        }
-
-        function displayResults(data) {
-            const tbody = $('#resultsBody').empty();
-            $('#resultsCount').text(data.length === 0 ? 'No results found' : `Found ${data.length} follow-up(s)`);
-
-            if (data.length === 0) {
-                tbody.append('<tr><td colspan="3" style="text-align: center;">No data matches your filters</td></tr>');
-                return;
-            }
-
-            data.forEach(item => {
-                const statusClass = item.status?.replace(' ', '\\ ') || 'Unknown';
-                tbody.append(`
-                    <tr>
-                        <td>${item.name || 'N/A'}</td>
-                        <td><span class="status-badge ${statusClass}">${item.status || 'Unknown'}</span></td>
-                        <td>${formatDate(item.dateFollowedUp) || 'Not recorded'}</td>
-                    </tr>
-                `);
-            });
-        }
-
-        function updateChart(data) {
-            const ctx = document.getElementById('followupsChart').getContext('2d');
-            const statusCounts = {};
-            data.forEach(item => {
-                const status = item.status || 'Unknown';
-                statusCounts[status] = (statusCounts[status] || 0) + 1;
-            });
-
-            const labels = Object.keys(statusCounts);
-            const values = Object.values(statusCounts);
-
-            if (followupsChart) followupsChart.destroy();
-
-            followupsChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Follow-Ups',
-                        data: values,
-                        backgroundColor: 'rgba(78, 115, 223, 0.7)',
-                        borderColor: 'rgba(78, 115, 223, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Follow-Ups by Status', font: { size: 16 } },
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0 } }
-                    }
+            const res = await axios.get('/api/dashboard-stats', {
+                params: {
+                    startDate: getStartDate(range),
+                    endDate: new Date().toISOString(),
+                    status: statuses.join(',')
                 }
             });
+
+            const { global, users } = res.data;
+
+            // Update KPI cards
+            document.getElementById('totalFollowups').textContent = global.totalFollowUps || 0;
+            document.getElementById('newVisitors').textContent = global.newVisitors || 0;
+            document.getElementById('overdueFollowups').textContent = global.overdue || 0;
+            document.getElementById('regularMembers').textContent = global.regular || 0;
+
+            // Update charts
+            updateStatusChart(users);
+            updateTrendChart(users);
+
+            // Update table
+            renderTable(users);
+
+            loadingEl.style.display = 'none';
+            tableEl.style.display = 'table';
+
+        } catch (err) {
+            console.error('Dashboard error:', err);
+            loadingEl.innerHTML = `<div style="color:#ef4444; text-align:center; padding:2rem;">
+                Failed to load: ${err.response?.data?.message || err.message || 'Check console for details'}
+            </div>`;
         }
+    }
 
-        function formatDate(dateStr) {
-            if (!dateStr) return 'Not recorded';
-            const date = new Date(dateStr);
-            const today = new Date();
-            if (date > today) return 'Future date';
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        }
+    function getStartDate(range) {
+        if (range === 'all') return null;
+        const now = new Date();
+        const days = { '7': 7, '30': 30, '90': 90, '365': 365 }[range];
+        if (days) now.setDate(now.getDate() - days);
+        return now.toISOString().split('T')[0];
+    }
 
-        async function fixFutureDates() {
-            if (!confirm('This will convert all 2025 dates to 2024. Continue?')) return;
+    function updateStatusChart(users) {
+        const counts = {};
+        users.forEach(u => {
+            const status = u.status || 'Unknown';
+            counts[status] = (counts[status] || 0) + 1;
+        });
 
-            try {
-                const res = await axios.get('/fix-dates');
-                alert(res.data.message || 'Dates fixed!');
-                $('#fixDates').fadeOut();
-                applyFilters();
-            } catch (err) {
-                const msg = err.response?.data?.error || err.message;
-                alert('Fix failed: ' + msg);
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        if (statusChart) statusChart.destroy();
+
+        statusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(counts),
+                datasets: [{
+                    data: Object.values(counts),
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
             }
+        });
+    }
+
+    function updateTrendChart(users) {
+        const byDay = {};
+        users.forEach(u => {
+            if (u.lastFollowUp) {
+                const day = new Date(u.lastFollowUp).toISOString().split('T')[0];
+                byDay[day] = (byDay[day] || 0) + 1;
+            }
+        });
+
+        const sortedDays = Object.keys(byDay).sort();
+        const values = sortedDays.map(d => byDay[d]);
+
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        if (trendChart) trendChart.destroy();
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedDays,
+                datasets: [{
+                    label: 'Follow-ups per day',
+                    data: values,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,0.15)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function renderTable(users) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">No follow-ups found</td></tr>';
+            return;
         }
-    </script>
+
+        users.forEach(item => {
+            const urgency = getUrgency(item.lastFollowUp);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.name || '—'}</td>
+                <td>${item.phoneNumber || '—'}</td>
+                <td><span class="status-badge ${item.status?.replace(' ','\\ ') || ''}">${item.status || 'Unknown'}</span></td>
+                <td>${formatDate(item.lastFollowUp)}</td>
+                <td><span style="color:${urgency.color}">${urgency.text}</span></td>
+                <td>
+                    <button class="action-btn btn-sms" onclick="sendSMS('${item.phoneNumber || ''}','${item.name || ''}')">
+                        <i class="fas fa-sms"></i> SMS
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function formatDate(dateStr) {
+        return dateStr ? new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    }
+
+    function getUrgency(dateStr) {
+        if (!dateStr) return { text: 'No date', color: '#6b7280' };
+        const daysAgo = Math.floor((Date.now() - new Date(dateStr)) / (1000*60*60*24));
+        if (daysAgo < 0) return { text: 'Future', color: '#8b5cf6' };
+        if (daysAgo <= 7) return { text: 'Recent', color: '#10b981' };
+        if (daysAgo <= 30) return { text: 'Due soon', color: '#f59e0b' };
+        return { text: 'Overdue', color: '#ef4444' };
+    }
+
+    function sendSMS(phone, name) {
+        if (!phone) return alert('No phone available');
+        alert(`Would send SMS to ${phone} (${name})`);
+    }
+</script>
+
 </body>
 </html>
