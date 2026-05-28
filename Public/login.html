@@ -2,85 +2,365 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCCG TOP - Admin Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="login.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>RCCG TOP | Admin Portal</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+   <!-- <link rel="icon" href="/Public/icons/favicon.ico">-->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-title" content="RCCG TOP">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background shapes */
+        .shape {
+            position: absolute;
+            filter: blur(60px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out;
+            z-index: 0;
+        }
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, #10b981, #059669);
+            top: -100px;
+            left: -100px;
+            border-radius: 50%;
+        }
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #3b82f6, #1e40af);
+            bottom: -150px;
+            right: -150px;
+            border-radius: 50%;
+            animation-delay: -5s;
+        }
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, #f59e0b, #d97706);
+            top: 40%;
+            left: 70%;
+            border-radius: 50%;
+            animation-delay: -10s;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 30px) scale(1.1); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Glass card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 480px;
+            padding: 2.5rem;
+            margin: 1.5rem;
+            position: relative;
+            z-index: 2;
+            transition: transform 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Logo */
+        .logo-wrapper {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+        .church-logo {
+            width: 85px;
+            height: 85px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.3);
+        }
+        .church-logo i {
+            font-size: 3rem;
+            color: #10b981;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(135deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        /* Form groups */
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            color: #f1f5f9;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #10b981;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        input::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(105deg, #10b981, #059669);
+            border: none;
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px -8px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(105deg, #059669, #047857);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Error message */
+        #error {
+            margin-top: 1.2rem;
+            font-size: 0.85rem;
+            text-align: center;
+            color: #f87171;
+            font-weight: 500;
+            min-height: 2rem;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            .glass-card {
+                padding: 1.8rem;
+                margin: 1rem;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .subtitle {
+                font-size: 0.8rem;
+            }
+            input {
+                padding: 0.8rem 1rem 0.8rem 2.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <!-- Replace with your actual church logo -->
-        <img src="images/Rccg_logo.png" alt="RCCG TOP Logo" class="church-logo">
-        
-        <h1>You Are Welcome</h1>
-        <h2>Please Provide The Credentials To Access The Database</h2>
-        
+    <!-- Animated background shapes -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+
+    <div class="glass-card">
+        <div class="logo-wrapper">
+            <div class="church-logo">
+                <i class="fas fa-church"></i>
+            </div>
+        </div>
+        <h1>RCCG TOP</h1>
+        <p class="subtitle">Admin Access Portal</p>
+
         <form id="loginForm">
             <div class="form-group">
-                <input type="text" id="username" placeholder="Username" required minlength="3" maxlength="50">
-                <i class="input-icon">👤</i>
+                <i class="fas fa-user"></i>
+                <input type="text" id="username" placeholder="Username" required autocomplete="off">
             </div>
-            
             <div class="form-group">
-                <input type="password" id="password" placeholder="Password" required minlength="6">
-                <i class="input-icon">🔒</i>
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="Password" required>
             </div>
-            
-            <button type="submit" class="submit-btn">Login</button>
-            <p id="error"></p>
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-arrow-right-to-bracket"></i> Login
+            </button>
+            <div id="error"></div>
         </form>
-        
-        <p class="footer-text">RCCG Tabernacle of Praise &copy; <span id="year"></span></p>
+
+        <div class="footer">
+            <i class="fas fa-cross"></i> RCCG Tabernacle of Praise &nbsp;|&nbsp; <span id="year"></span>
+        </div>
     </div>
 
     <script>
-        // Set current year in footer
+        // Set current year
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const errorElement = document.getElementById('error');
-            errorElement.textContent = '';
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = '';
             
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
 
-            // Simple client-side validation
             if (!username || !password) {
-                errorElement.textContent = 'Please provide the username and password';
+                errorEl.textContent = 'Please enter both username and password';
                 return;
             }
 
-            fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
                 if (data.success) {
-                    // Clear the form fields
+                    // Clear form
                     document.getElementById('username').value = '';
                     document.getElementById('password').value = '';
-                    
-                    // Redirect to the main page
+                    // Redirect to main database page
                     window.location.href = '/index.html';
                 } else {
-                    errorElement.textContent = data.message || 'Invalid credentials';
+                    errorEl.textContent = data.message || 'Invalid username or password';
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                errorElement.textContent = 'Invalid username or password';
-            });
+            } catch (err) {
+                console.error('Login error:', err);
+                errorEl.textContent = 'Connection error. Please try again.';
+            }
         });
     </script>
+    <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered:', reg))
+                .catch(err => console.log('SW registration failed:', err));
+        });
+    }
+
+    // Optional: Show install prompt (for browsers that support it)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show a custom install button (optional)
+        const installBtn = document.createElement('button');
+        installBtn.textContent = '📲 Install App';
+        installBtn.style.position = 'fixed';
+        installBtn.style.bottom = '20px';
+        installBtn.style.right = '20px';
+        installBtn.style.backgroundColor = '#10b981';
+        installBtn.style.color = 'white';
+        installBtn.style.border = 'none';
+        installBtn.style.padding = '10px 20px';
+        installBtn.style.borderRadius = '50px';
+        installBtn.style.zIndex = '9999';
+        installBtn.style.cursor = 'pointer';
+        installBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        installBtn.onclick = () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(choice => {
+                if (choice.outcome === 'accepted') console.log('User accepted install');
+                deferredPrompt = null;
+                installBtn.remove();
+            });
+        };
+        document.body.appendChild(installBtn);
+    });
+</script>
+
 </body>
 </html>
