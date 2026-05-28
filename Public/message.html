@@ -51,7 +51,7 @@
             statusElement.style.display = 'none';
             
             const name = document.getElementById('name').value.trim();
-            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             
             // Simple validation
             if (!name || !phoneNumber) {
@@ -74,7 +74,7 @@
                 },
                 body: JSON.stringify({
                     name: name,
-                    phoneNumber: phoneNumber
+                    phone: phoneN
                 }),
             })
             .then(response => {

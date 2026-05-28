@@ -2,223 +2,500 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCCG TOP Database</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>RCCG TOP | Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); transition: background 0.2s; }
+        .sticky-form { position: sticky; top: 1.5rem; }
+        .toast-message { animation: slideInOut 3s ease forwards; }
+        @keyframes slideInOut {
+            0% { opacity: 0; transform: translateX(30px); }
+            10% { opacity: 1; transform: translateX(0); }
+            90% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(30px); visibility: hidden; }
+        }
+        .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        /* Excel-style table */
+        .excel-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .excel-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .excel-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .excel-table tr:hover {
+            background-color: #e5e7eb;
+            transition: 0.1s;
+        }
+        /* Dark mode */
+        html.dark {
+            background: #0f172a;
+        }
+        html.dark body {
+            background: #0f172a;
+        }
+        html.dark .bg-white {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+        html.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 {
+            color: #f1f5f9 !important;
+        }
+        html.dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-600 {
+            color: #94a3b8 !important;
+        }
+        html.dark input, .dark select, .dark textarea {
+            background-color: #0f172a !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        html.dark button.bg-white {
+            background-color: #1e293b !important;
+            border-color: #475569 !important;
+        }
+        html.dark .excel-table th {
+            background-color: #1e293b;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        html.dark .excel-table td {
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+        html.dark .excel-table tr:nth-child(even) {
+            background-color: #0f172a;
+        }
+        html.dark .excel-table tr:hover {
+            background-color: #334155;
+        }
+        html.dark .table-container {
+            border-color: #334155;
+            background: #1e293b;
+        }
+    </style>
 </head>
-<body>
-    <div class="floating-cross">✝</div>
-    <div class="floating-cross">✝</div>
-    <div class="floating-cross">✝</div> 
-    <header>
-        <img src="images/Rccg_logo.png" class="dynamic-image" alt="Floating Logo">
+<body class="min-h-screen antialiased">
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-2 w-80"></div>
 
-    </header>
-    <div class="container">
-        <h1>Create New Member</h1>
-        
-            <form id="userForm">
-                <input type="text" id="name" placeholder="Name" required minlength="3" maxlength="50" />
-                <input type="text" id="phone" placeholder="Phone" required pattern="\d{10,13}" />
-                <input type="text" id="address" placeholder="Address" required minlength="5" maxlength="100" />
-                <input type="email" id="email" placeholder="Email" required />
-                <input type="date" id="date" placeholder="Date" required />
-                <input type="text" id="comment" placeholder="Comment" required minlength="3" maxlength="250" />
-                <button type="submit">Add Member</button>
-        </form>
-        
-        <h2>Search For Member</h2>
-        <form id="searchForm">
-            <!-- search form fields here -->
-            <input type="text" id="searchQuery" placeholder="Search by Name" required />
-            <button type="submit">Search</button>
-        </form>
-        
-        <h2>RCCG TOP DATABASE</h2>
-        <table id="userTable">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th class="address-column">Address</th>
-                    <th>Email Address</th>
-                    <th class="date-column">Date</th>
-                    <th>Comment</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <form action="follow-up.html">
-            <button type="submit">Go to Follow-Up page</button>
-        </form>
+    <div class="max-w-[1600px] mx-auto px-5 py-6 md:px-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-database text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Church Database</h1>
+                        <p class="text-gray-500 text-sm"><i class="fa-regular fa-address-card"></i>  Church Members & Visitors </p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="exportToCSV()" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Export CSV
+                </button>
+                <a href="dashboard.html" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+                <a href="follow-up.html" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list"></i> Follow‑Up
+                </a>
+                <a href="attendance.html" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i> Attendance
+                </a>
+                <button id="darkModeToggle" onclick="toggleDarkMode()" class="bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2.5 rounded-2xl text-sm font-medium transition shadow-sm">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+</div>
+
+            </div>
         </div>
-        <script>
+   
+        <!-- Two-column layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- LEFT: Sticky Add Member Form -->
+         <div class="lg:col-span-4">
+    <div class="sticky-form">
+        <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-all">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-emerald-600"></i> Add New Member
+            </h2>
+            <form id="userForm">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" required autocomplete="off" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
+                        <input type="tel" id="phone" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+                        <input type="text" id="address" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                        <input type="date" id="date" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Comment</label>
+                        <textarea id="comment" rows="3" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500"></textarea>
+                        <div class="text-right text-xs text-gray-400 mt-1"><span id="commentCount">0</span> characters</div>
+                    </div>
+                </div>
+                <button type="submit" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 shadow-md">
+                    <i class="fa-regular fa-save"></i> Add Member
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 
-        const serverUrl = 'http://localhost:3000/api/users';
-        
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const address = document.getElementById('address').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const date = document.getElementById('date').value;
-            const comment = document.getElementById('comment').value.trim();
-            
-            if (!validateInputs(name, phone, address, email, comment)) {
-                alert('Please ensure all fields meet the required criteria.');
+            <!-- RIGHT: Scrollable Excel-style Table -->
+            <div class="lg:col-span-8">
+                <!-- Filters -->
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-5 bg-white/50 p-4 rounded-2xl">
+                    <div class="flex gap-3 flex-wrap">
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="searchInput" placeholder="Search name, phone, email..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-2xl text-sm w-64">
+                        </div>
+                        <button onclick="resetSearch()" class="text-gray-500 hover:text-gray-700 text-sm px-3"><i class="fa-solid fa-undo-alt"></i> Reset</button>
+                    </div>
+                    <span id="recordCount" class="text-sm text-gray-500">0 records</span>
+                </div>
+                <div class="table-container" style="max-height: 70vh; overflow: auto; border-radius: 1rem; border: 1px solid #e5e7eb; background: white;">
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('name')" style="cursor: pointer;">NAME <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('phone')" style="cursor: pointer;">PHONE <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('address')" style="cursor: pointer;">ADDRESS <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('email')" style="cursor: pointer;">EMAIL <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('date')" style="cursor: pointer;">DATE <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('comment')" style="cursor: pointer;">COMMENT <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop transition-all">
+        <div class="bg-white rounded-3xl max-w-2xl w-full mx-4 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-2xl font-bold flex items-center gap-2"><i class="fa-regular fa-pen-to-square text-emerald-600"></i> Edit Member</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            </div>
+            <div id="editForm" class="space-y-5"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/users';
+        let allMembers = [];
+        let currentSort = { field: 'name', direction: 'asc' };
+
+        // Toast helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-message bg-white border-l-4 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-xl rounded-xl p-3 flex items-center gap-3 text-sm`;
+            toast.innerHTML = `<i class="fa-${type === 'success' ? 'solid fa-circle-check text-emerald-500' : 'solid fa-triangle-exclamation text-red-500'}"></i><span class="text-gray-700">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Dark mode
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const btn = document.getElementById('darkModeToggle');
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        }
+        function initTheme() {
+            const html = document.documentElement;
+            const btn = document.getElementById('darkModeToggle');
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') {
+                html.classList.add('dark');
+                btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            } else {
+                html.classList.remove('dark');
+                btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            }
+        }
+
+        // Character counter
+        const commentInput = document.getElementById('comment');
+        const commentCount = document.getElementById('commentCount');
+        commentInput.addEventListener('input', () => commentCount.innerText = commentInput.value.length);
+
+        // Load members
+        async function loadMembers() {
+            try {
+                const res = await axios.get(API_URL);
+                allMembers = res.data;
+                applyFiltersAndRender();
+            } catch (err) {
+                showToast('Failed to load members', 'error');
+            }
+        }
+
+        function applyFiltersAndRender() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allMembers.filter(m => 
+                m.name.toLowerCase().includes(searchTerm) ||
+                m.phone.toLowerCase().includes(searchTerm) ||
+                m.email.toLowerCase().includes(searchTerm)
+            );
+            // Sort
+            filtered.sort((a, b) => {
+                let aVal = a[currentSort.field] || '';
+                let bVal = b[currentSort.field] || '';
+                if (currentSort.field === 'date') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            renderTable(filtered);
+            document.getElementById('recordCount').innerText = `${filtered.length} record(s)`;
+        }
+
+        function renderTable(members) {
+            const tbody = document.getElementById('memberTable');
+            if (members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400">No members found</td></tr>`;
                 return;
             }
-            
-            try {
-                await axios.post(serverUrl, { name, phone, address, email, date, comment });
-                await loadUsers();
-                alert('Member added successfully');
-            } catch (error) {
-                if (error.response && error.response.data && error.response.data.message) {
-                    alert(error.response.data.message);
-                } else {
-                    alert('An error occurred while adding the member');
-                }
+            tbody.innerHTML = members.map(m => `
+                <tr>
+                    <td>${escapeHtml(m.name)}</td>
+                    <td>${escapeHtml(m.phone)}</td>
+                    <td>${escapeHtml(m.address || '—')}</td>
+                    <td>${escapeHtml(m.email)}</td>
+                    <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
+                    <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
+                    <td>
+                        <button onclick="editMember('${m._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteMember('${m._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                
+            `).join('');
+        }
+
+        function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
+
+        function sortTable(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'asc';
             }
-        });
-        
-        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            applyFiltersAndRender();
+        }
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            applyFiltersAndRender();
+        }
+
+        // Add member
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const query = document.getElementById('searchQuery').value;
-            await searchUsers(query);
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                date: document.getElementById('date').value,
+                comment: document.getElementById('comment').value.trim()
+            };
+            if (!formData.name || !formData.phone || !formData.email || !formData.date || !formData.comment) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+            try {
+                await axios.post(API_URL, formData);
+                showToast('Member added successfully');
+                e.target.reset();
+                commentCount.innerText = '0';
+                loadMembers();
+            } catch (err) {
+                showToast(err.response?.data?.message || 'Failed to add member', 'error');
+            }
         });
 
-        function validateInputs(name, phone, address, email, comment) {
-            if (!/^[A-Za-z\s]+$/.test(name)) {
-                alert('Name should only contain alphabetic characters and spaces.');
-                return false;
-            }
-            if (name.length < 3 || name.length > 50) {
-                alert('Name should be between 3 and 50 characters long.');
-                return false;
-            }
-            if (!/^\d{10,15}$/.test(phone)) {
-                alert('Phone should be between 10 and 15 digits long.');
-                return false;
-            }
-            if (address.length < 5 || address.length > 100) {
-                alert('Address should be between 5 and 100 characters long.');
-                return false;
-            }
-            if (!email.includes('@')) {
-                alert('Please enter a valid email address.');
-                return false;
-            }
-            if (comment.length < 3 || comment.length > 250) {
-                alert('Comment should be between 3 and 250 characters long.');
-                return false;
-            }
-            return true;
-        }
-        document.addEventListener('DOMContentLoaded', loadUsers);
-        async function loadUsers() {
+        // Edit modal
+        async function editMember(id) {
             try {
-                const res = await axios.get(serverUrl);
-                const users = res.data;
-                const tableBody = document.getElementById('userTable').getElementsByTagName('tbody')[0];
-                tableBody.innerHTML = '';
-                users.forEach(user => {  
-                    const row = tableBody.insertRow(-1);  
-                    row.insertCell(0).textContent = user.name;
-                    row.insertCell(1).textContent = user.phone;
-                    row.insertCell(2).textContent = user.address;
-                    row.insertCell(3).textContent = user.email;
-                    row.insertCell(4).textContent = user.date;
-                    row.insertCell(5).textContent = user.comment;
-                    const actions = row.insertCell(6);
-                    actions.innerHTML = `
-                        <button class="edit" onclick="editUser('${user._id}')">Edit</button>
-                        <button onclick="deleteUser('${user._id}')">Delete</button>
-                    `;
-                });
-            } catch (error) {
-                console.error('Error loading members:', error.message);
-                alert('An error occurred while loading members');
+                const res = await axios.get(`${API_URL}/${id}`);
+                const m = res.data;
+                const modal = document.getElementById('editModal');
+                const formHTML = `
+                    <input type="hidden" id="edit-id" value="${m._id}">
+                    <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(m.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${escapeHtml(m.phone)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Address</label><input id="edit-address" value="${escapeHtml(m.address)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Email</label><input id="edit-email" value="${escapeHtml(m.email)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
+                    <div class="flex gap-3 mt-6"><button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button><button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button></div>
+                `;
+                document.getElementById('editForm').innerHTML = formHTML;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } catch (err) {
+                showToast('Failed to load member data', 'error');
             }
         }
 
-        async function searchUsers(query) {
+        function closeModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                name: document.getElementById('edit-name').value,
+                phone: document.getElementById('edit-phone').value,
+                address: document.getElementById('edit-address').value,
+                email: document.getElementById('edit-email').value,
+                date: document.getElementById('edit-date').value,
+                comment: document.getElementById('edit-comment').value
+            };
             try {
-                const res = await axios.get(`${serverUrl}/search?name=${query}`);
-                const users = res.data;
-                const tableBody = document.getElementById('userTable').getElementsByTagName('tbody')[0];
-                tableBody.innerHTML = '';
-                users.forEach(user => {
-                    const row = tableBody.insertRow();
-                    row.insertCell(0).textContent = user.name;
-                    row.insertCell(1).textContent = user.phone;
-                    row.insertCell(2).textContent = user.address;
-                    row.insertCell(3).textContent = user.email;
-                    row.insertCell(4).textContent = user.date;
-                    row.insertCell(5).textContent = user.comment;
-                    const actions = row.insertCell(6);
-                    actions.innerHTML = `
-                        <button onclick="editUser('${user._id}')">Edit</button>
-                        <button onclick="deleteUser('${user._id}')">Delete</button>
-                    `;
-                });
-            } catch (error) {
-                console.error('Error searching members:', error.message);
-                alert('An error occurred while searching members');
+                await axios.put(`${API_URL}/${id}`, data);
+                showToast('Member updated successfully');
+                closeModal();
+                loadMembers();
+            } catch (err) {
+                showToast('Update failed', 'error');
             }
         }
 
-        async function editUser(id) {
-            const name = prompt('Enter new name:');
-            const phone = prompt('Enter new phone number:');
-            const address = prompt('Enter new address:');
-            const email = prompt('Enter new email:');
-            const date = prompt('Enter new date:');
-            const comment = prompt('Enter new comment:');
-
+        async function deleteMember(id) {
+            if (!confirm('Are you sure you want to delete this member?')) return;
             try {
-                await axios.put(`${serverUrl}/${id}`, { comment, date });
-                alert('Member updated successfully');
-                await loadUsers();
-            } catch (error) {
-                console.error('Error updating members:', error.message);
-                alert('An error occurred while updating the member');
+                await axios.delete(`${API_URL}/${id}`);
+                showToast('Member deleted');
+                loadMembers();
+            } catch (err) {
+                showToast('Delete failed', 'error');
             }
         }
 
-        async function deleteUser(id) {
-            if (confirm('Are you sure you want to delete this member?')) {
-            try {
-                await axios.delete(`${serverUrl}/${id}`);
-                alert('User deleted successfully');
-                loadUsers();
-            } catch (error) {
-                console.error('Error deleting user:', error.message);
-                alert('An error occurred while deleting the member');
-            }
+        // Export CSV
+        function exportToCSV() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allMembers.filter(m => 
+                m.name.toLowerCase().includes(searchTerm) ||
+                m.phone.toLowerCase().includes(searchTerm) ||
+                m.email.toLowerCase().includes(searchTerm)
+            );
+            if (filtered.length === 0) return showToast('No data to export', 'error');
+            const headers = ['Name', 'Phone', 'Address', 'Email', 'Date', 'Comment'];
+            const rows = filtered.map(m => [m.name, m.phone, m.address, m.email, m.date ? dayjs(m.date).format('YYYY-MM-DD') : '', m.comment]);
+            const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `members_${dayjs().format('YYYY-MM-DD')}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast('CSV exported');
         }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', applyFiltersAndRender);
+
+        // Initialize
+        window.onload = () => {
+            initTheme();
+            loadMembers();
+        };
+    </script>
+    <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered:', reg))
+                .catch(err => console.log('SW registration failed:', err));
+        });
     }
 
-        async function deleteFollowUp(id) {
-            if (confirm('Are you sure you want to delete this follow-up?')) {
-                try {
-                    await axios.delete(`${serverUrl}/${id}`);
-                    alert('Follow-Up deleted successfully');
-                    loadFollowUps();
-                } catch (error) {
-                    console.error('Error deleting follow-up:', error.message);
-                    alert('An error occurred while deleting the follow-up');
-                }
-            }
-        }
+    // Optional: Show install prompt (for browsers that support it)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show a custom install button (optional)
+        const installBtn = document.createElement('button');
+        installBtn.textContent = '📲 Install App';
+        installBtn.style.position = 'fixed';
+        installBtn.style.bottom = '20px';
+        installBtn.style.right = '20px';
+        installBtn.style.backgroundColor = '#10b981';
+        installBtn.style.color = 'white';
+        installBtn.style.border = 'none';
+        installBtn.style.padding = '10px 20px';
+        installBtn.style.borderRadius = '50px';
+        installBtn.style.zIndex = '9999';
+        installBtn.style.cursor = 'pointer';
+        installBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        installBtn.onclick = () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(choice => {
+                if (choice.outcome === 'accepted') console.log('User accepted install');
+                deferredPrompt = null;
+                installBtn.remove();
+            });
+        };
+        document.body.appendChild(installBtn);
+    });
 
-        loadUsers();
-    </script>
+</script>
 </body>
 </html>

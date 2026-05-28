@@ -277,47 +277,131 @@ h2 {
 }
 
 /* Navigation Buttons */
+/* Navigation Container */
 .nav-buttons {
     display: flex;
-    gap: 1.5rem;
-    margin-top: 3rem;
+    gap: 1.2rem;
+    margin: 2.5rem 0;
+    flex-wrap: wrap;
     justify-content: center;
+    padding: 1rem 0;
 }
 
-.nav-buttons form {
-    flex: 0 0 auto;
-    width: 240px;
-}
-
-.nav-buttons button {
-    width: 100%;
-    padding: 16px;
-    border-radius: 8px;
+/* Base Link/Button Style */
+.nav-btn {
+    flex: 1;
+    min-width: 200px;
+    padding: 1rem 1.8rem;
+    border-radius: 50px;
     font-size: 1rem;
     font-weight: 600;
-    cursor: pointer;
+    text-decoration: none;
+    color: white !important;  /* Force white text */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
     transition: all 0.3s ease;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
     border: none;
+    cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    letter-spacing: 1px;
+    background-size: 200% auto;
+    z-index: 1;
 }
 
-.nav-buttons form:first-child button {
-    background: linear-gradient(135deg, #1b262c, #0f4c75);
+/* Remove default link styles */
+.nav-btn:link,
+.nav-btn:visited,
+.nav-btn:hover,
+.nav-btn:active {
+    text-decoration: none;
     color: white;
 }
 
-.nav-buttons form:last-child button {
-    background: linear-gradient(135deg, #3282b8, #0f4c75);
+/* Individual Button Gradients */
+.nav-btn[href*="dashboard"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.nav-btn[href*="message"] {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.nav-btn[href*="attendance"] {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Hover Effects */
+.nav-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+    background-position: right center;  /* Gradient animation */
+}
+
+.nav-btn[href*="dashboard"]:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.nav-btn[href*="message"]:hover {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
+.nav-btn[href*="attendance"]:hover {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+}
+
+/* Active/Click Effect */
+.nav-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Icon Styling */
+.nav-btn i {
+    font-size: 1.3rem;
+    transition: transform 0.3s ease;
     color: white;
 }
 
-.nav-buttons button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.nav-btn:hover i {
+    transform: scale(1.2) rotate(5deg);
 }
 
+/* Add shine effect */
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.7s ease;
+    z-index: -1;
+}
+
+.nav-btn:hover::before {
+    left: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-buttons {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+    
+    .nav-btn {
+        width: 100%;
+        min-width: auto;
+        padding: 1rem 1.5rem;
+    }
+}
 /* Status Badges */
 
 .status-badge {

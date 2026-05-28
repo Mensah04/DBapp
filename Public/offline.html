@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline – RCCG TOP</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+        }
+        i { font-size: 4rem; color: #f59e0b; }
+        h1 { margin: 1rem 0; }
+        button {
+            background: #10b981;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: bold;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <i class="fas fa-wifi"></i>
+        <h1>You're Offline</h1>
+        <p>Please check your internet connection and try again.</p>
+        <button onclick="location.reload()">Retry</button>
+    </div>
+</body>
+</html>

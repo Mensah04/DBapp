@@ -173,6 +173,8 @@ app.use(session({
     store: MongoStore.create({ mongoUrl: 'mongodb://localhost:27017/followups' })
 }));
 
+ app.use('/Public', express.static('Public')); 
+
 // Authentication
 const PREDEFINED_USER = {
     username: 'Rccg@top',
@@ -190,7 +192,7 @@ app.post('/api/login', (req, res) => {
         req.session.userId = PREDEFINED_USER.username;
         return res.json({ success: true, message: 'Login successful' });
     }
-    res.status(400).json({ success: false, message: 'Invalid credentials' });
+    res.status(400).json({ success: false, message: 'Invalid username or password' });
 });
 
 
@@ -353,13 +355,16 @@ app.get('/protected', isAuthenticated, (_req, res) => {
     res.send('Protected content');
 });
 
+app.get('/dashboard', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
 app.get('/api/followups/stats', async (req, res) => {
     const total = await FollowUp.countDocuments();
     const regular = await FollowUp.countDocuments({ status: 'Regular' });
     res.json({ total, regular, irregular: total - regular });
 });
 
-// @route   POST /api/attendance
 // @desc    Create new attendance record
 app.post('/api/attendance', async (req, res) => {
     console.log('POST /api/attendance:', req.body);
@@ -371,7 +376,7 @@ let { name, phone, date, serviceType, category, gender, notes } = req.body;
             normalizedPhone = phone.replace(/\D/g, '');
 
             // Handle common Ghana formats: 0xxxxxxxxx → +233xxxxxxxxx
-            if (normalizedPhone.startsWith('0') && normalizedPhone.length === 10) {
+            if (normalizedPhone.startsWith('0') && normalizedPhone.length === 11) {
                 normalizedPhone = '233' + normalizedPhone.substring(1);
             }
             // Add + prefix if not present
@@ -381,7 +386,7 @@ let { name, phone, date, serviceType, category, gender, notes } = req.body;
 
             // Optional: enforce length for Ghana numbers
             if (normalizedPhone.length !== 13) { // +233xxxxxxxxx = 13 chars
-                return res.status(400).json({ message: 'Invalid phone number format (use Ghana format: +233xxxxxxxxx or 0xxxxxxxxx)' });
+                return res.status(400).json({ message: 'Invalid phone number format' });
             }
         }
 
@@ -414,11 +419,11 @@ let { name, phone, date, serviceType, category, gender, notes } = req.body;
         const attendanceData = {
             name,
             category,
-            gender,                    // ← added
+            gender,                   
             phone: normalizedPhone,
             date,
             serviceType,
-            notes: notes || ''         // ← also added notes
+            notes: notes || ''         
         };
         const attendance = new Attendance(attendanceData);
         await attendance.save();
@@ -449,7 +454,6 @@ let { name, phone, date, serviceType, category, gender, notes } = req.body;
 }
 });
 
-// @route   GET /api/attendance
 // @desc    Get all attendance records with filters
 app.get('/api/attendance', async (req, res) => {
     console.log('GET /api/attendance - Query:', req.query);
@@ -516,146 +520,125 @@ app.get('/api/attendance', async (req, res) => {
     }
 });
 
-// @route   GET /api/attendance/stats
-// @desc    Get attendance statistics
-// @route   GET /api/attendance/stats
+// @desc    Get attendance statistics for today
 app.get('/api/attendance/stats', async (req, res) => {
-    console.log('GET /api/attendance/stats');
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Today's stats by category (existing)
-        const todayCategoryStats = await Attendance.aggregate([
-            {
-                $match: {
-                    date: { $gte: today, $lt: tomorrow }
-                }
-            },
-            {
-                $group: {
-                    _id: "$category",
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
+        const todayRecords = await Attendance.find({ date: { $gte: today, $lt: tomorrow } });
+        
+        const byCategory = { Children: 0, Youth: 0, Married: 0, Single: 0, Elder: 0 };
+        const byGender = { Male: 0, Female: 0 };
 
-        // NEW: Today's stats by gender
-        const todayGenderStats = await Attendance.aggregate([
-            {
-                $match: {
-                    date: { $gte: today, $lt: tomorrow },
-                    gender: { $exists: true }  // only count records with gender
-                }
-            },
-            {
-                $group: {
-                    _id: "$gender",
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
-
-        // Overall stats by category (existing)
-        const overallCategoryStats = await Attendance.aggregate([
-            {
-                $group: {
-                    _id: "$category",
-                    total: { $sum: 1 },
-                    lastAttendance: { $max: "$date" }
-                }
-            }
-        ]);
-
-        // Calculate today's total (existing)
-        const todayTotal = todayCategoryStats.reduce((sum, stat) => sum + stat.count, 0);
-
-        // NEW: Calculate male & female counts for today
-        const todayMale = todayGenderStats.find(g => g._id === 'Male')?.count || 0;
-        const todayFemale = todayGenderStats.find(g => g._id === 'Female')?.count || 0;
+        todayRecords.forEach(record => {
+            if (record.category) byCategory[record.category] = (byCategory[record.category] || 0) + 1;
+            if (record.gender) byGender[record.gender] = (byGender[record.gender] || 0) + 1;
+        });
 
         res.json({
             today: {
-                total: todayTotal,
-                byCategory: todayCategoryStats.reduce((acc, stat) => {
-                    acc[stat._id] = stat.count;
-                    return acc;
-                }, {}),
-                // NEW: add gender stats
-                byGender: {
-                    Male: todayMale,
-                    Female: todayFemale
-                }
-            },
-            overall: {
-                total: overallCategoryStats.reduce((sum, stat) => sum + stat.total, 0),
-                byCategory: overallCategoryStats.reduce((acc, stat) => {
-                    acc[stat._id] = {
-                        total: stat.total,
-                        lastAttendance: stat.lastAttendance
-                    };
-                    return acc;
-                }, {})
+                total: todayRecords.length,
+                byCategory,
+                byGender
             }
         });
     } catch (error) {
-        console.error('Error fetching attendance stats:', error);
+        console.error('Stats error:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// @route   GET /api/attendance/:id
-// @desc    Get single attendance record
+
+// @desc    Update attendance record (check out)
+// @desc    Update user (all fields)
+
+app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, phone, address, email, date, comment } = req.body;
+
+    if (!name || !phone || !email) {
+        return res.status(400).json({ message: 'Name, phone, and email are required' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            { name, phone, address, email, date, comment },
+            { new: true, runValidators: true }
+        );
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Update error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Get single attendance record by ID
 app.get('/api/attendance/:id', async (req, res) => {
     console.log('GET /api/attendance/:id - ID:', req.params.id);
     try {
-        const attendance = await Attendance.findById(req.params.id);
-        if (!attendance) {
+        const record = await Attendance.findById(req.params.id);
+        if (!record) {
             return res.status(404).json({ message: 'Attendance record not found' });
         }
-        res.json(attendance);
+        res.json(record);
     } catch (error) {
-        console.error('Error fetching single attendance:', error);
+        console.error('Error fetching attendance record:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// @route   PUT /api/attendance/:id
-// @desc    Update attendance record (check out)
+// @desc    Update attendance record (full update or checkout)
 app.put('/api/attendance/:id', async (req, res) => {
     console.log('PUT /api/attendance/:id - ID:', req.params.id, 'Body:', req.body);
     try {
-        const { checkedOut } = req.body;
-        const updateData = { ...req.body };
-        
-        if (checkedOut === false) {
-            updateData.checkedOutTime = null;
-            updateData.checkedIn = true;
-        } else if (checkedOut === true) {
-            updateData.checkedOutTime = new Date();
-            updateData.checkedIn = false;
+        const { id } = req.params;
+        const { checkedOut, name, category, gender, phone, serviceType, date, notes } = req.body;
+
+        let updateData = {};
+
+        // If it's a checkout action
+        if (checkedOut === true) {
+            updateData = {
+                checkedIn: false,
+                checkedOutTime: new Date()
+            };
+        } 
+        // If it's a full edit (all fields provided)
+        else if (name && category && gender && serviceType && date) {
+            updateData = {
+                name,
+                category,
+                gender,
+                phone: phone || '',
+                serviceType,
+                date: new Date(date),
+                notes: notes || '',
+                // preserve existing check-in status unless explicitly changed
+                checkedIn: req.body.checkedIn !== undefined ? req.body.checkedIn : true
+            };
+        } 
+        else {
+            return res.status(400).json({ message: 'Invalid update data' });
         }
 
-        const attendance = await Attendance.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            { new: true, runValidators: true }
-        );
-        
-        if (!attendance) {
+        const updated = await Attendance.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        if (!updated) {
             return res.status(404).json({ message: 'Attendance record not found' });
         }
-        
-        res.json(attendance);
+        res.json(updated);
     } catch (error) {
         console.error('Error updating attendance:', error);
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 
-// @route   DELETE /api/attendance/:id
 // @desc    Delete attendance record
 app.delete('/api/attendance/:id', async (req, res) => {
     console.log('DELETE /api/attendance/:id - ID:', req.params.id);
@@ -671,7 +654,6 @@ app.delete('/api/attendance/:id', async (req, res) => {
     }
 });
 
-// @route   GET /api/attendance/search/:query
 // @desc    Search attendance records
 app.get('/api/attendance/search/:query', async (req, res) => {
     console.log('GET /api/attendance/search/:query - Query:', req.params.query);
@@ -691,9 +673,6 @@ app.get('/api/attendance/search/:query', async (req, res) => {
     }
 });
 
-// @route   GET /api/attendance/export/:type
-// @desc    Export attendance data (CSV/Excel)
-// @route   GET /api/attendance/export/:type
 // @desc    Export attendance data (CSV/Excel)
 app.get('/api/attendance/export/:type', async (req, res) => {
     try {
@@ -784,6 +763,20 @@ app.get('/api/users', async (_req, res) => {
     }
 });
 
+// @desc    Get single user by ID
+app.get('/api/users/:id', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 app.get('/api/users/search', async (req, res) => {
     const { name } = req.query;
     try {
@@ -794,53 +787,12 @@ app.get('/api/users/search', async (req, res) => {
     }
 });
 
-app.put('/api/users/:id', async (req, res) => {
-    const { id } = req.params;
-    const { comment, date } = req.body;
-    try {
-        const updatedUser = await User.findByIdAndUpdate(id, { comment, date }, { new: true });
-        res.json(updatedUser);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
 
 app.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     try {
         await User.findByIdAndDelete(id);
         res.json({ message: 'User deleted' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-app.post('/send-message', async (req, res) => {
-  const { name, phone } = req.body;
-
-  // Save recipient info
-  const newRecipient = new Recipient({ name, phone });
-  await newRecipient.save();
-
-  // Continue sending the message via Twilio or your logic
-  res.send('Message sent and contact saved!');
-});
-
-app.post('/api/messages', async (req, res) => {
-    try {
-        const { name, phone, message } = req.body;
-        const newMessage = new Message({ name, phone, message });
-        await newMessage.save();
-        res.status(201).json(newMessage);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-app.get('/api/messages', async (req, res) => {
-    try {
-        const messages = await Message.find().sort({ timestamp: -1 });
-        res.json(messages);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -876,149 +828,73 @@ app.get('/fix-dates', async (req, res) => {
 });
 
 app.post('/send-message', async (req, res) => {
-    const { name, phoneNumber, } = req.body;
+    const { name, phone } = req.body;   // ← use 'phone', not 'phoneNumber'
 
-    if (!name || !phoneNumber) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Name and phone number are required" 
+    if (!name || !phone) {
+        return res.status(400).json({
+            success: false,
+            message: "Name and phone number are required"
         });
     }
 
-    const formattedPhone = phoneNumber.replace(/\D/g, '');
+    // Format phone (remove spaces, dashes, etc.)
+const formattedPhone = phone.replace(/\D/g, '');
 
     try {
-        const response = await fetch("https://e5mnxq.api.infobip.com/sms/2/text/advanced", {
-            method: "POST",
-            headers: {
-                "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                "messages": [{
-                    "destinations": [{ "to": formattedPhone }],
-                    "from": process.env.INFOBIP_SENDER_ID || "447491163443",
-                    "text": `Welcome to the RCCG Tabernacle Of Praise (Zonal) Parish, We are glad you are here. ${name}. Enjoy the service!`
-                }]
-            })
-        });
+        const response = await fetch(
+            `${process.env.INFOBIP_BASE_URL}/sms/2/text/advanced`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            destinations: [{ to: formattedPhone }],
+                            from: process.env.INFOBIP_SENDER_ID || "447491163443",
+                            text: `Welcome to RCCG Tabernacle Of Praise, ${name}. We are glad you are here. Enjoy the service!`
+                        }
+                    ]
+                })
+            }
+        );
 
         const result = await response.json();
 
+        // Better error handling
         if (!response.ok) {
-            throw new Error(result.requestError?.serviceException?.text || "Infobip API error");
+            console.error("Infobip error:", result);
+            throw new Error(
+                result.requestError?.serviceException?.text ||
+                result.message ||
+                "Infobip API error"
+            );
         }
 
-        res.status(200).json({ 
-            success: true, 
-            message: "SMS sent successfully!",
-            data: result 
+        // ✅ Optional: Save message to DB (recommended)
+        await Message.create({
+            name,
+            phone: formattedPhone,
+            message: "Welcome SMS sent"
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "SMS sent successfully",
+            data: result
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            success: false, 
+        console.error("SMS FAILED:", error.message);
+
+        res.status(500).json({
+            success: false,
             message: "Failed to send SMS",
-            error: error.message 
+            error: error.message
         });
-    }
-});
-
-app.get('/api/dashboard-stats', async (req, res) => {
-    try {
-        const { startDate, endDate, status } = req.query;
-
-        // ── Global stats ───────────────────────────────────────────────
-        // For global, we ignore date filter if no specific range is requested
-        const globalMatch = {};
-        if (status) globalMatch.status = { $in: status.split(',') };
-
-        const globalStats = await FollowUp.aggregate([
-            { $match: globalMatch },
-            {
-                $group: {
-                    _id: null,
-                    totalFollowUps: { $sum: 1 },
-                    regular: { $sum: { $cond: [{ $eq: ["$status", "Regular"] }, 1, 0] } },
-                    overdue: {
-                        $sum: {
-                            $cond: [
-                                {
-                                    $and: [
-                                        { $lt: ["$dateFollowedUp", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)] },
-                                        { $ne: ["$status", "Regular"] },
-                                        { $ne: ["$dateFollowedUp", null] }
-                                    ]
-                                },
-                                1,
-                                0
-                            ]
-                        }
-                    },
-                    newVisitors: {
-                        $sum: {
-                            $cond: [
-                                { $in: ["$status", ["Visitor", "First Timer"]] },
-                                1,
-                                0
-                            ]
-                        }
-                    }
-                }
-            }
-        ]);
-
-        // ── Filtered user stats (apply date filter only here) ───────────────
-        const userMatch = { ...globalMatch };
-        if (startDate || endDate) {
-            userMatch.dateFollowedUp = {};
-            if (startDate) userMatch.dateFollowedUp.$gte = new Date(startDate);
-            if (endDate) userMatch.dateFollowedUp.$lte = new Date(endDate);
-        }
-
-        const userStatsPipeline = [
-            { $match: userMatch },
-            {
-                $group: {
-                    _id: "$userId",
-                    totalFollowUps: { $sum: 1 },
-                    lastFollowUp: { $max: "$dateFollowedUp" },
-                    status: { $first: "$status" },
-                    phoneNumber: { $first: "$phoneNumber" }
-                }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "user"
-                }
-            },
-            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    name: { $ifNull: ["$user.name", "Unknown"] },
-                    phoneNumber: 1,
-                    totalFollowUps: 1,
-                    lastFollowUp: 1,
-                    status: 1,
-                    _id: 0
-                }
-            }
-        ];
-
-        const userStats = await FollowUp.aggregate(userStatsPipeline);
-
-        res.json({
-            global: globalStats[0] || { totalFollowUps: 0, regular: 0, overdue: 0, newVisitors: 0 },
-            users: userStats
-        });
-
-    } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-        res.status(500).json({ message: error.message || "Server error" });
     }
 });
 
@@ -1133,6 +1009,108 @@ app.get('/api/followups', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
+
+// ==================== IMPROVED DASHBOARD STATS ====================
+app.get('/api/dashboard-stats', async (req, res) => {
+    try {
+        const { range = '30', status } = req.query;
+
+        let query = {};
+
+        // Status Filter
+        if (status) {
+            query.status = status;
+        }
+
+        const followUps = await FollowUp.find(query).lean();
+
+        const now = new Date();
+        let cutoff = new Date();
+
+        // Time Range Filter
+        if (range === '7') cutoff.setDate(now.getDate() - 7);
+        else if (range === '30') cutoff.setDate(now.getDate() - 30);
+        else if (range === '90') cutoff.setDate(now.getDate() - 90);
+        else if (range === 'all') cutoff = new Date(0); // All time
+
+        // Filter by date range
+        const filteredFollowUps = followUps.filter(fu => {
+            if (!fu.dateFollowedUp) return range === 'all';
+            return new Date(fu.dateFollowedUp) >= cutoff;
+        });
+
+        // Status Breakdown
+        const statusBreakdown = {
+            Regular: 0,
+            Irregular: 0,
+            Visitor: 0,
+            'First Timer': 0,
+            total: filteredFollowUps.length
+        };
+
+        filteredFollowUps.forEach(fu => {
+            const st = fu.status?.trim();
+            if (st && statusBreakdown.hasOwnProperty(st)) {
+                statusBreakdown[st]++;
+            } else if (st) {
+                statusBreakdown.Irregular++;
+            }
+        });
+
+        // Overdue (last 30 days)
+        const overdue = filteredFollowUps.filter(fu => {
+            if (!fu.dateFollowedUp) return true;
+            return new Date(fu.dateFollowedUp) < new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        }).length;
+
+        // New Visitors
+        const newVisitors = filteredFollowUps.filter(fu => {
+            return ['Visitor', 'First Timer'].includes(fu.status) &&
+                   new Date(fu.dateFollowedUp || fu.createdAt || now) >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        }).length;
+
+        // Trend (always last 30 days for chart)
+        const trend = getFollowUpTrend(filteredFollowUps, 30);
+
+        res.json({
+            global: {
+                totalFollowUps: statusBreakdown.total,
+                regular: statusBreakdown.Regular,
+                irregular: statusBreakdown.Irregular,
+                newVisitors: newVisitors,
+                overdue: overdue
+            },
+            statusBreakdown,
+            trend: trend,
+            users: filteredFollowUps.slice(0, 30) // Pending table data
+        });
+
+    } catch (error) {
+        console.error("Dashboard stats error:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Helper Function (keep this)
+function getFollowUpTrend(followUps, days = 30) {
+    const trend = {};
+    const now = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        trend[date.toISOString().split('T')[0]] = 0;
+    }
+
+    followUps.forEach(fu => {
+        if (fu.dateFollowedUp) {
+            const dateStr = new Date(fu.dateFollowedUp).toISOString().split('T')[0];
+            if (trend[dateStr] !== undefined) trend[dateStr]++;
+        }
+    });
+
+    return Object.keys(trend).map(date => ({ date, count: trend[date] }));
+}
 
 app.get('/api/debug-model', async (req, res) => {
     try {

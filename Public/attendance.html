@@ -2,262 +2,759 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCCG TOP Attendance</title>
-    <link rel="stylesheet" href="attendance.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>RCCG TOP | Attendance Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); transition: background 0.2s; }
+        .sticky-form { position: sticky; top: 1.5rem; }
+        .toast-message { animation: slideInOut 3s ease forwards; }
+        @keyframes slideInOut {
+            0% { opacity: 0; transform: translateX(30px); }
+            10% { opacity: 1; transform: translateX(0); }
+            90% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(30px); visibility: hidden; }
+        }
+        .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        /* Excel-style table */
+        .excel-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .excel-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .excel-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .excel-table tr:hover {
+            background-color: #e5e7eb;
+            transition: 0.1s;
+        }
+        /* Dark mode overrides */
+        html.dark {
+            background: #0f172a;
+        }
+        html.dark body {
+            background: #0f172a;
+        }
+        html.dark .bg-white {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+        html.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 {
+            color: #f1f5f9 !important;
+        }
+        html.dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-600 {
+            color: #94a3b8 !important;
+        }
+        html.dark input, .dark select, .dark textarea {
+            background-color: #0f172a !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        html.dark button.bg-white {
+            background-color: #1e293b !important;
+            border-color: #475569 !important;
+        }
+        html.dark .excel-table th {
+            background-color: #1e293b;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        html.dark .excel-table td {
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+        html.dark .excel-table tr:nth-child(even) {
+            background-color: #0f172a;
+        }
+        html.dark .excel-table tr:hover {
+            background-color: #334155;
+        }
+        html.dark .table-container {
+            border-color: #334155;
+            background: #1e293b;
+        }
+        .stat-card {
+            transition: all 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .category-badge, .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .category-badge.children { background: #dbeafe; color: #1e40af; }
+        .category-badge.youth { background: #dcfce7; color: #166534; }
+        .category-badge.married { background: #fef3c7; color: #92400e; }
+        .category-badge.single { background: #e0e7ff; color: #3730a3; }
+        .category-badge.elder { background: #f1f5f9; color: #0f172a; }
+        .status-badge.checked-in { background: #dcfce7; color: #166534; }
+        .status-badge.checked-out { background: #fee2e2; color: #991b1b; }
+        html.dark .category-badge.children { background: #1e3a8a; color: #bfdbfe; }
+        html.dark .category-badge.youth { background: #14532d; color: #bbf7d0; }
+        html.dark .category-badge.married { background: #78350f; color: #fde68a; }
+        html.dark .category-badge.single { background: #312e81; color: #c7d2fe; }
+        html.dark .category-badge.elder { background: #1e293b; color: #e2e8f0; }
+        html.dark .status-badge.checked-in { background: #14532d; color: #bbf7d0; }
+        html.dark .status-badge.checked-out { background: #7f1d1d; color: #fecaca; }
+        .action-btn {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin: 0 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn.checkout { background: #f59e0b; color: white; }
+        .action-btn.checkout:hover { background: #d97706; }
+        .action-btn.edit { background: #3b82f6; color: white; }
+        .action-btn.edit:hover { background: #2563eb; }
+        .action-btn.delete { background: #ef4444; color: white; }
+        .action-btn.delete:hover { background: #dc2626; }
+    </style>
 </head>
-<body>
-    <!-- Header -->
-    <header class="main-header">
-        <div class="header-content">
-            <img src="images/Rccg_logo.png" alt="RCCG Logo" class="dynamic-image">
-            <h1>RCCG TOP Attendance</h1>
-        </div>
-    </header>
+<body class="min-h-screen antialiased">
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-2 w-80"></div>
 
-    <!-- Main Container -->
-    <div class="container">
+    <div class="max-w-[1600px] mx-auto px-5 py-6 md:px-8">
+        <!-- Header with navigation + dark mode -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-clipboard-check text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Attendance Management</h1>
+                        <p class="text-gray-500 text-sm"><i class="fa-regular fa-calendar-check"></i> Check-in / Check-out & tracking</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <a href="index.html" class="bg-white border border-gray-200 hover:bg-gray-50 px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-database"></i> Members
+                </a>
+                <a href="follow-up.html" class="bg-white border border-gray-200 hover:bg-gray-50 px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-clipboard-list"></i> Follow‑Up
+                </a>
+                <a href="dashboard.html" class="bg-white border border-gray-200 hover:bg-gray-50 px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+                <button id="downloadCheckinQR" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-qrcode"></i> Check‑in QR Code
+                </button>
+            </div>
+        </div>
+
         <!-- Statistics Cards -->
-        <div class="stats-cards">
-            <div class="stat-card" id="todayTotal">
-                <h3>Today's Total</h3>
-                <p class="stat-number">0</p>
-            </div>
-            <div class="stat-card" id="childrenCount">
-                <h3>Children</h3>
-                <p class="stat-number">0</p>
-            </div>
-            <div class="stat-card" id="youthCount">
-                <h3>Youth</h3>
-                <p class="stat-number">0</p>
-            </div>
-            <div class="stat-card" id="marriedCount">
-                <h3>Married</h3>
-                <p class="stat-number">0</p>
-            </div>
-            <div class="stat-card" id="singleCount">
-                <h3>Single</h3>
-                <p class="stat-number">0</p>
-            </div>
-            <div class="stat-card" id="maleCount">
-             <h3>Male</h3>
-             <p class="stat-number">0</p>
-           </div>
-           <div class="stat-card" id="femaleCount">
-             <h3>Female</h3>
-             <p class="stat-number">0</p>
-           </div>
-   </div>
-
-        <!-- Quick Check-in Form -->
-        <div class="quick-checkin">
-            <h2><i class="fas fa-user-plus"></i> Quick Check-in</h2>
-            <form id="attendanceForm">
-               <div class="form-row">
-    <div class="form-group">
-        <label for="attendanceName">Full Name *</label>
-        <input type="text" id="attendanceName" placeholder="Full Name" required>
-    </div>
-    <div class="form-group">
-        <label for="attendanceCategory">Category *</label>
-        <select id="attendanceCategory" required>
-            <option value="">Select Category</option>
-            <option value="Children">Children (0-12)</option>
-            <option value="Youth">Youth (13-35)</option>
-            <option value="Married">Married</option>
-            <option value="Single">Single</option>
-            <option value="Elder">Elder</option>
-            <!-- options... -->
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="attendanceGender">Gender *</label>
-        <select id="attendanceGender" required>
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-        </select>
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group">
-        <label for="attendancePhone">Phone Number</label>
-        <input type="tel" id="attendancePhone" placeholder="Phone Number">
-    </div>
-    <div class="form-group">
-        <label for="attendanceService">Service Type *</label>
-        <select id="attendanceService" required>
-            <option value="Sunday Service">Sunday Service</option>
-            <option value="Bible Study">Bible Study</option>
-            <option value="Prayer Meeting">Prayer Meeting</option>
-            <option value="Special Program">Special Program</option>
-            <option value="Midweek Service">Midweek Service</option>
-            <!-- options... -->
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="attendanceDate">Date</label>
-        <input type="date" id="attendanceDate" value="">
-    </div>
-</div>
-
-<div class="form-group full-width">
-    <label for="attendanceNotes">Notes (optional)</label>
-    <textarea id="attendanceNotes" placeholder="Notes (optional)" rows="2"></textarea>
-</div>
-                
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-check-circle"></i> Check In
-                </button>
-            </form>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8" id="statsGrid">
+            <!-- dynamic stats injected via JS -->
         </div>
 
-        <!-- Filters -->
-        <div class="filters">
-            <h3><i class="fas fa-filter"></i> Filters</h3>
-            <div class="filter-controls">
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                    <option value="Children">Children</option>
-                    <option value="Youth">Youth</option>
-                    <option value="Married">Married</option>
-                    <option value="Single">Single</option>
-                    <option value="Elder">Elder</option>
-                </select>
-                
-                <select id="serviceTypeFilter">
-                    <option value="">All Services</option>
-                    <option value="Sunday Service">Sunday Service</option>
-                    <option value="Bible Study">Bible Study</option>
-                    <option value="Prayer Meeting">Prayer Meeting</option>
-                    <option value="Special Program">Special Program</option>
-                    <option value="Midweek Service">Midweek Service</option>
-                </select>
-                
-                <select id="statusFilter">
-                    <option value="">All Status</option>
-                    <option value="true">Checked In</option>
-                    <option value="false">Checked Out</option>
-                </select>
-                
-                <input type="date" id="dateFilter" value="">
-                
-                <button id="applyFilters" class="filter-btn">
-                    <i class="fas fa-search"></i> Apply
-                </button>
-                <button id="resetFilters" class="filter-btn secondary">
-                    <i class="fas fa-redo"></i> Reset
-                </button>
-                <button id="exportBtn" class="filter-btn success">
-                    <i class="fas fa-download"></i> Export CSV
-                </button>
-            </div>
-        </div>
-
-        <!-- Attendance Table -->
-        <div class="table-container">
-            <h2><i class="fas fa-list"></i> Attendance Records</h2>
-            
-            <div class="table-controls">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search by name or phone...">
-                </div>
-                <div class="pagination-info" id="paginationInfo">
-                    Showing 0 records
+        <!-- Two-column layout: sticky form + scrollable table -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- LEFT: Sticky Check-in Form -->
+            <div class="lg:col-span-4">
+                <div class="sticky-form">
+                    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-all">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus text-emerald-600"></i> Quick Check-in
+                        </h2>
+                        <form id="attendanceForm">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name *</label>
+                                    <input type="text" id="attendanceName" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Category *</label>
+                                        <select id="attendanceCategory" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl">
+                                            <option value="">Select</option>
+                                            <option value="Children">Children (0-12)</option>
+                                            <option value="Youth">Youth (13-35)</option>
+                                            <option value="Married">Married</option>
+                                            <option value="Single">Single</option>
+                                            <option value="Elder">Elder</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Gender *</label>
+                                        <select id="attendanceGender" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl">
+                                            <option value="">Select</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
+                                    <input type="tel" id="attendancePhone" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Service Type *</label>
+                                        <select id="attendanceService" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl">
+                                            <option value="Sunday Service">Sunday Service</option>
+                                            <option value="Bible Study">Bible Study</option>
+                                            <option value="Prayer Meeting">Prayer Meeting</option>
+                                            <option value="Special Program">Special Program</option>
+                                            <option value="Midweek Service">Midweek Service</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                                        <input type="date" id="attendanceDate" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+                                    <textarea id="attendanceNotes" rows="2" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl"></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 shadow-md">
+                                <i class="fa-regular fa-save"></i> Check In
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-            
-            <table id="attendanceTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Gender</th>
-                        <th>Phone</th>
-                        <th>Service</th>
-                        <th>Date</th>
-                        <th>Check-in Time</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            
-            <div class="pagination">
-                <button id="prevPage" disabled><i class="fas fa-chevron-left"></i></button>
-                <span id="pageInfo">Page 1</span>
-                <button id="nextPage" disabled><i class="fas fa-chevron-right"></i></button>
-            </div>
-        </div>
 
-        <!-- Navigation -->
-        <div class="nav-buttons">
-            <button onclick="location.href='index.html'">
-                <i class="fas fa-database"></i> Main Database
-            </button>
-            <button onclick="location.href='followup.html'">
-                <i class="fas fa-users"></i> Follow-ups
-            </button>
-            <button onclick="location.href='dashboard.html'">
-                <i class="fas fa-chart-line"></i> Dashboard
-            </button>
-            <button onclick="location.href='message.html'">
-                <i class="fas fa-comment-alt"></i> Messaging
-            </button>
+            <!-- RIGHT: Filters + Excel-style Table -->
+            <div class="lg:col-span-8">
+                <!-- Filter bar -->
+                <div class="bg-white/50 p-4 rounded-2xl mb-5 flex flex-wrap gap-3 items-end">
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-gray-500">Category</label>
+                        <select id="categoryFilter" class="px-3 py-2 border rounded-xl text-sm w-36">
+                            <option value="">All</option>
+                            <option value="Children">Children</option>
+                            <option value="Youth">Youth</option>
+                            <option value="Married">Married</option>
+                            <option value="Single">Single</option>
+                            <option value="Elder">Elder</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-gray-500">Service</label>
+                        <select id="serviceTypeFilter" class="px-3 py-2 border rounded-xl text-sm w-40">
+                            <option value="">All</option>
+                            <option value="Sunday Service">Sunday Service</option>
+                            <option value="Bible Study">Bible Study</option>
+                            <option value="Prayer Meeting">Prayer Meeting</option>
+                            <option value="Special Program">Special Program</option>
+                            <option value="Midweek Service">Midweek Service</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-gray-500">Status</label>
+                        <select id="statusFilter" class="px-3 py-2 border rounded-xl text-sm w-32">
+                            <option value="">All</option>
+                            <option value="true">Checked In</option>
+                            <option value="false">Checked Out</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-gray-500">Date</label>
+                        <input type="date" id="dateFilter" class="px-3 py-2 border rounded-xl text-sm w-40">
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="applyFilters" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fa-solid fa-search"></i> Apply</button>
+                        <button id="resetFilters" class="border border-gray-300 px-4 py-2 rounded-xl text-sm"><i class="fa-solid fa-undo"></i> Reset</button>
+                        <button id="exportBtn" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fa-solid fa-download"></i> Export</button>
+                    </div>
+                    <div class="ml-auto flex gap-3 items-center">
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="searchInput" placeholder="Search name/phone" class="pl-9 pr-4 py-2 border rounded-xl text-sm w-56">
+                        </div>
+                        <span id="recordCount" class="text-sm text-gray-500">0 records</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Table -->
+                <div class="table-container" style="max-height: 65vh; overflow: auto; border-radius: 1rem; border: 1px solid #e5e7eb; background: white;">
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th><th>Category</th><th>Gender</th><th>Phone</th><th>Service</th><th>Date</th><th>Check-in</th><th>Status</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <button id="prevPage" class="px-4 py-2 border rounded-xl disabled:opacity-50" disabled><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                    <span id="pageInfo" class="text-sm text-gray-600">Page 1</span>
+                    <button id="nextPage" class="px-4 py-2 border rounded-xl disabled:opacity-50" disabled>Next <i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Check-out Modal -->
-    <div id="checkoutModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3>Check Out <span id="checkoutName"></span></h3>
-            <p>Are you sure you want to check out this person?</p>
-            <div class="modal-actions">
-                <button id="confirmCheckout" class="btn-success">Yes, Check Out</button>
-                <button id="cancelCheckout" class="btn-secondary">Cancel</button>
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full mx-4 p-6">
+            <h3 class="text-xl font-bold mb-2">Check Out</h3>
+            <p>Are you sure you want to check out <span id="checkoutName" class="font-semibold"></span>?</p>
+            <div class="flex gap-3 mt-6">
+                <button id="confirmCheckout" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl">Yes, Check Out</button>
+                <button id="cancelCheckout" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
             </div>
         </div>
     </div>
 
     <!-- Member Detail Modal -->
-<div id="memberModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:600px; width:90%;">
-        <span class="close-modal" onclick="closeMemberModal()">×</span>
-        <h2 id="memberName">Member Details</h2>
-        
-        <div style="margin:1.5rem 0;">
-            <p><strong>Phone:</strong> <span id="memberPhone">—</span></p>
-            <p><strong>Gender:</strong> <span id="memberGender">—</span></p>
-            <p><strong>Category:</strong> <span id="memberCategory">—</span></p>
-            <p><strong>Last Check-in:</strong> <span id="memberLastCheckin">—</span></p>
-            <p><strong>Total Visits:</strong> <span id="memberVisitCount">—</span></p>
+    <div id="memberModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="memberName" class="text-2xl font-bold">Member Details</h2>
+                <button onclick="closeMemberModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <p><strong>Phone:</strong> <span id="memberPhone">—</span></p>
+                <p><strong>Gender:</strong> <span id="memberGender">—</span></p>
+                <p><strong>Category:</strong> <span id="memberCategory">—</span></p>
+                <p><strong>Last Check-in:</strong> <span id="memberLastCheckin">—</span></p>
+                <p><strong>Total Visits:</strong> <span id="memberVisitCount">—</span></p>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Recent History</h3>
+            <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>Date</th><th>Service</th><th>Status</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+            <div class="mt-6 text-right"><button onclick="closeMemberModal()" class="border border-gray-300 px-5 py-2 rounded-xl">Close</button></div>
         </div>
+    </div>
 
-        <h3>Recent Attendance History</h3>
-        <table style="width:100%; margin-top:1rem;">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Service</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="historyBody"></tbody>
-        </table>
-
-        <div style="margin-top:1.5rem; text-align:right;">
-            <button onclick="closeMemberModal()" class="btn-secondary">Close</button>
+    <!-- Edit Attendance Modal -->
+<div id="editAttendanceModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop">
+    <div class="bg-white white:bg-gray-800 rounded-3xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold">Edit Attendance Record</h3>
+            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
         </div>
+        <form id="editAttendanceForm">
+            <input type="hidden" id="editAttendanceId">
+            <div class="space-y-4">
+                <div><label class="block text-sm font-semibold">Name</label><input type="text" id="editName" class="w-full border rounded-xl px-4 py-2"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-sm font-semibold">Category</label><select id="editCategory" class="w-full border rounded-xl px-4 py-2"><option value="Children">Children</option><option value="Youth">Youth</option><option value="Married">Married</option><option value="Single">Single</option><option value="Elder">Elder</option></select></div>
+                    <div><label class="block text-sm font-semibold">Gender</label><select id="editGender" class="w-full border rounded-xl px-4 py-2"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                </div>
+                <div><label class="block text-sm font-semibold">Phone</label><input type="tel" id="editPhone" class="w-full border rounded-xl px-4 py-2"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-sm font-semibold">Service Type</label><select id="editServiceType" class="w-full border rounded-xl px-4 py-2"><option value="Sunday Service">Sunday Service</option><option value="Bible Study">Bible Study</option><option value="Prayer Meeting">Prayer Meeting</option><option value="Special Program">Special Program</option><option value="Midweek Service">Midweek Service</option></select></div>
+                    <div><label class="block text-sm font-semibold">Date</label><input type="date" id="editDate" class="w-full border rounded-xl px-4 py-2"></div>
+                </div>
+                <div><label class="block text-sm font-semibold">Notes</label><textarea id="editNotes" rows="2" class="w-full border rounded-xl px-4 py-2"></textarea></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="submit" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl">Save Changes</button>
+                <button type="button" onclick="closeEditModal()" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
-    <script src="attendance.js"></script>
+    <script>
+        const API_URL = '/api/attendance';
+        let currentPage = 1;
+        let currentFilters = {};
+        let currentSearch = '';
+        let checkoutId = null;
+        let editingId = null;
+
+        // DOM elements
+        const attendanceForm = document.getElementById('attendanceForm');
+        const tableBody = document.getElementById('attendanceTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const serviceTypeFilter = document.getElementById('serviceTypeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const applyFilters = document.getElementById('applyFilters');
+        const resetFilters = document.getElementById('resetFilters');
+        const exportBtn = document.getElementById('exportBtn');
+        const prevPage = document.getElementById('prevPage');
+        const nextPage = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+        const recordCountSpan = document.getElementById('recordCount');
+        const checkoutModal = document.getElementById('checkoutModal');
+        const checkoutNameSpan = document.getElementById('checkoutName');
+        const confirmCheckout = document.getElementById('confirmCheckout');
+        const cancelCheckout = document.getElementById('cancelCheckout');
+
+        // Stats elements
+        const statsGrid = document.getElementById('statsGrid');
+
+        // Set today's date
+        const todayStr = dayjs().format('YYYY-MM-DD');
+        document.getElementById('attendanceDate').value = todayStr;
+        dateFilter.value = todayStr;
+
+        // Toast helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-message bg-white border-l-4 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-xl rounded-xl p-3 flex items-center gap-3 text-sm`;
+            toast.innerHTML = `<i class="fa-${type === 'success' ? 'solid fa-circle-check text-emerald-500' : 'solid fa-triangle-exclamation text-red-500'}"></i><span class="text-gray-700">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Dark mode
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const btn = document.getElementById('darkModeToggle');
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        }
+        function initTheme() {
+            const saved = localStorage.getItem('theme');
+            const html = document.documentElement;
+            const btn = document.getElementById('darkModeToggle');
+            if (saved === 'dark') {
+                html.classList.add('dark');
+                btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            } else {
+                html.classList.remove('dark');
+                btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const res = await axios.get(`${API_URL}/stats`);
+                const { today } = res.data;
+                statsGrid.innerHTML = `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Today's Total</h3><p class="text-2xl font-bold">${today.total || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Children</h3><p class="text-2xl font-bold">${today.byCategory?.Children || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Youth</h3><p class="text-2xl font-bold">${today.byCategory?.Youth || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Married</h3><p class="text-2xl font-bold">${today.byCategory?.Married || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Single</h3><p class="text-2xl font-bold">${today.byCategory?.Single || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Male</h3><p class="text-2xl font-bold">${today.byGender?.Male || 0}</p></div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Female</h3><p class="text-2xl font-bold">${today.byGender?.Female || 0}</p></div>
+                `;
+            } catch (err) { console.error(err); }
+        }
+
+        // Load attendance with filters
+        async function loadAttendance() {
+            try {
+                let url = `${API_URL}?page=${currentPage}&limit=20`;
+                if (currentSearch) {
+                    const searchRes = await axios.get(`${API_URL}/search/${encodeURIComponent(currentSearch)}`);
+                    displayAttendance(searchRes.data);
+                    recordCountSpan.innerText = `${searchRes.data.length} records`;
+                    pageInfo.innerText = `Page 1`;
+                    prevPage.disabled = true;
+                    nextPage.disabled = true;
+                    return;
+                }
+                if (currentFilters.category) url += `&category=${currentFilters.category}`;
+                if (currentFilters.serviceType) url += `&serviceType=${currentFilters.serviceType}`;
+                if (currentFilters.checkedIn !== undefined) url += `&checkedIn=${currentFilters.checkedIn}`;
+                if (currentFilters.date) url += `&date=${currentFilters.date}`;
+                const res = await axios.get(url);
+                const { attendance, pagination } = res.data;
+                displayAttendance(attendance);
+                recordCountSpan.innerText = `${pagination.total} records`;
+                pageInfo.innerText = `Page ${pagination.page} of ${pagination.pages}`;
+                prevPage.disabled = pagination.page <= 1;
+                nextPage.disabled = pagination.page >= pagination.pages;
+            } catch (err) { showToast('Failed to load attendance', 'error'); }
+        }
+
+        function downloadCheckinQR() {
+    // Create a temporary div
+    const tempDiv = document.createElement('div');
+    tempDiv.style.width = '200px';
+    tempDiv.style.height = '200px';
+    // Generate QR for the check‑in page URL (no member ID)
+    const checkinUrl = `${window.location.origin}/checkin.html`;
+    new QRCode(tempDiv, {
+        text: checkinUrl,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    // Wait a moment for the QR to render, then download
+    setTimeout(() => {
+        const canvas = tempDiv.querySelector('canvas');
+        if (!canvas) return;
+        const link = document.createElement('a');
+        link.download = 'church_checkin_qr.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        tempDiv.remove();
+    }, 100);
+}
+
+// Attach to button
+document.getElementById('downloadCheckinQR')?.addEventListener('click', downloadCheckinQR);
+
+
+        function displayAttendance(records) {
+            tableBody.innerHTML = '';
+            if (!records.length) {
+                tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-400">No attendance records</td></tr>`;
+                return;
+            }
+            records.forEach(record => {
+                const row = tableBody.insertRow();
+                row.style.cursor = 'pointer';
+                row.onclick = () => openMemberModal(record._id);
+                row.insertCell().textContent = record.name;
+                const catCell = row.insertCell();
+                catCell.innerHTML = `<span class="category-badge ${record.category?.toLowerCase()}">${record.category}</span>`;
+                row.insertCell().textContent = record.gender || '-';
+                row.insertCell().textContent = record.phone || '-';
+                row.insertCell().textContent = record.serviceType;
+                row.insertCell().textContent = dayjs(record.date).format('MMM D, YYYY');
+                row.insertCell().textContent = record.checkedInTime ? dayjs(record.checkedInTime).format('h:mm A') : '-';
+                const statusCell = row.insertCell();
+                statusCell.innerHTML = `<span class="status-badge ${record.checkedIn ? 'checked-in' : 'checked-out'}">${record.checkedIn ? 'Checked In' : 'Checked Out'}</span>`;
+                const actionsCell = row.insertCell();
+                actionsCell.innerHTML = `
+                    ${record.checkedIn ? `<button class="action-btn checkout" onclick="event.stopPropagation(); openCheckoutModal('${record._id}','${escapeHtml(record.name)}')"><i class="fas fa-sign-out-alt"></i> Out</button>` : ''}
+                    <button class="action-btn edit" onclick="event.stopPropagation(); editAttendance('${record._id}')"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteAttendance('${record._id}','${escapeHtml(record.name)}')"><i class="fas fa-trash"></i> Del</button>
+                `;
+            });
+        }
+
+        function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
+
+        // Check-in submit
+        attendanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('attendanceName').value.trim(),
+                category: document.getElementById('attendanceCategory').value,
+                gender: document.getElementById('attendanceGender').value,
+                phone: document.getElementById('attendancePhone').value.trim(),
+                serviceType: document.getElementById('attendanceService').value,
+                date: document.getElementById('attendanceDate').value ? new Date(document.getElementById('attendanceDate').value + 'T00:00:00') : new Date(),
+                notes: document.getElementById('attendanceNotes').value.trim()
+            };
+            if (!data.name || !data.category || !data.gender || !data.serviceType) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+            try {
+                await axios.post(API_URL, data);
+                showToast('Checked in successfully');
+                attendanceForm.reset();
+                document.getElementById('attendanceDate').value = todayStr;
+                loadAttendance(); loadStats();
+            } catch (err) {
+                const msg = err.response?.data?.message || 'Check-in failed';
+                showToast(msg, 'error');
+            }
+        });
+
+        function resetForm() {
+            attendanceForm.reset();
+            document.getElementById('attendanceDate').value = todayStr;
+            document.getElementById('attendanceService').value = 'Sunday Service';
+            const submitBtn = attendanceForm.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fa-regular fa-save"></i> Check In';
+            editingId = null;
+        }
+
+        // Edit
+        // Edit functions
+async function editAttendance(id) {
+    try {
+        const res = await axios.get(`${API_URL}/${id}`);
+        const record = res.data;
+        document.getElementById('editAttendanceId').value = record._id;
+        document.getElementById('editName').value = record.name;
+        document.getElementById('editCategory').value = record.category;
+        document.getElementById('editGender').value = record.gender || 'Male';
+        document.getElementById('editPhone').value = record.phone || '';
+        document.getElementById('editServiceType').value = record.serviceType;
+        document.getElementById('editDate').value = dayjs(record.date).format('YYYY-MM-DD');
+        document.getElementById('editNotes').value = record.notes || '';
+        document.getElementById('editAttendanceModal').classList.remove('hidden');
+        document.getElementById('editAttendanceModal').classList.add('flex');
+    } catch (err) {
+        showToast('Failed to load record for editing', 'error');
+    }
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editAttendanceModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+// Handle edit form submission
+document.getElementById('editAttendanceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editAttendanceId').value;
+    const data = {
+        name: document.getElementById('editName').value.trim(),
+        category: document.getElementById('editCategory').value,
+        gender: document.getElementById('editGender').value,
+        phone: document.getElementById('editPhone').value.trim(),
+        serviceType: document.getElementById('editServiceType').value,
+        date: document.getElementById('editDate').value,
+        notes: document.getElementById('editNotes').value.trim()
+    };
+    try {
+        await axios.put(`${API_URL}/${id}`, data);
+        showToast('Record updated successfully');
+        closeEditModal();
+        loadAttendance();
+        loadStats();
+    } catch (err) {
+        showToast('Update failed: ' + (err.response?.data?.message || err.message), 'error');
+    }
+});
+        // Checkout modal
+        function openCheckoutModal(id, name) {
+            checkoutId = id;
+            checkoutNameSpan.textContent = name;
+            checkoutModal.classList.remove('hidden');
+            checkoutModal.classList.add('flex');
+        }
+        confirmCheckout.onclick = async () => {
+            if (!checkoutId) return;
+            try {
+                await axios.put(`${API_URL}/${checkoutId}`, { checkedOut: true });
+                showToast('Checked out successfully');
+                checkoutModal.classList.add('hidden');
+                loadAttendance(); loadStats();
+            } catch (err) { showToast('Checkout failed', 'error'); }
+        };
+        cancelCheckout.onclick = () => checkoutModal.classList.add('hidden');
+
+         // Delete
+        async function deleteAttendance(id, name) {
+            if (!confirm(`Delete attendance record for ${name}?`)) return;
+            try {
+                await axios.delete(`${API_URL}/${id}`);
+                showToast('Deleted successfully');
+                loadAttendance(); loadStats();
+            } catch (err) { showToast('Delete failed', 'error'); }
+        }
+
+        // Member modal
+        async function openMemberModal(id) {
+            try {
+                const res = await axios.get(`${API_URL}/${id}`);
+                const r = res.data;
+                document.getElementById('memberName').innerText = r.name;
+                document.getElementById('memberPhone').innerText = r.phone || '—';
+                document.getElementById('memberGender').innerText = r.gender || '—';
+                document.getElementById('memberCategory').innerText = r.category;
+                document.getElementById('memberLastCheckin').innerText = r.checkedInTime ? dayjs(r.checkedInTime).format('MMM D, YYYY h:mm A') : '—';
+                document.getElementById('memberVisitCount').innerText = '1'; // placeholder – backend can extend
+                const historyBody = document.getElementById('historyBody');
+                historyBody.innerHTML = `<tr><td>${dayjs(r.date).format('MMM D, YYYY')}</td><td>${r.serviceType}</td><td>${r.checkedIn ? 'Checked In' : 'Checked Out'}</td></tr>`;
+                document.getElementById('memberModal').classList.remove('hidden');
+                document.getElementById('memberModal').classList.add('flex');
+            } catch (err) { showToast('Failed to load details', 'error'); }
+        }
+        window.closeMemberModal = () => {
+            document.getElementById('memberModal').classList.add('hidden');
+            document.getElementById('memberModal').classList.remove('flex');
+        };
+
+        // Filters logic
+        function applyFiltersHandler() {
+            currentFilters = {};
+            if (categoryFilter.value) currentFilters.category = categoryFilter.value;
+            if (serviceTypeFilter.value) currentFilters.serviceType = serviceTypeFilter.value;
+            if (statusFilter.value) currentFilters.checkedIn = statusFilter.value === 'true';
+            if (dateFilter.value) currentFilters.date = dateFilter.value;
+            currentPage = 1;
+            loadAttendance();
+        }
+        function resetFiltersHandler() {
+            categoryFilter.value = '';
+            serviceTypeFilter.value = '';
+            statusFilter.value = '';
+            dateFilter.value = todayStr;
+            searchInput.value = '';
+            currentFilters = {};
+            currentSearch = '';
+            currentPage = 1;
+            loadAttendance();
+        }
+        searchInput.addEventListener('input', (e) => {
+            currentSearch = e.target.value.trim();
+            currentPage = 1;
+            loadAttendance();
+        });
+        applyFilters.addEventListener('click', applyFiltersHandler);
+        resetFilters.addEventListener('click', resetFiltersHandler);
+        prevPage.addEventListener('click', () => { if (currentPage > 1) { currentPage--; loadAttendance(); } });
+        nextPage.addEventListener('click', () => { currentPage++; loadAttendance(); });
+        exportBtn.addEventListener('click', () => {
+            let url = `${API_URL}/export/csv?`;
+            if (currentFilters.category) url += `category=${currentFilters.category}&`;
+            if (currentFilters.serviceType) url += `serviceType=${currentFilters.serviceType}&`;
+            if (currentFilters.date) url += `date=${currentFilters.date}&`;
+            window.open(url, '_blank');
+        });
+
+        // Initialize
+        initTheme();
+        loadStats();
+        loadAttendance();
+
+        // Fetch current user role
+let currentUserRole = 'viewer';
+
+async function fetchUserRole() {
+    try {
+        const res = await axios.get('/api/me');
+        currentUserRole = res.data.role;
+        // Re-render any dynamic tables/buttons that depend on role
+        if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+        if (typeof renderTable === 'function') renderTable();   // adjust to your table render function
+        // Hide/show add forms for viewers
+        if (currentUserRole === 'viewer') {
+            document.querySelectorAll('form, .submit-btn, .action-btn, .delete, .edit, .checkout').forEach(el => {
+                if (el.tagName === 'BUTTON' || el.tagName === 'FORM') el.style.display = 'none';
+            });
+        }
+    } catch (err) { console.error('Role fetch failed'); }
+}
+
+// Call after page loads
+fetchUserRole();
+
+</script>
 </body>
 </html>

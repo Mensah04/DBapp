@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - RCCG TOP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+        .toast-message { animation: slideOut 3s forwards; }
+        @keyframes slideOut {
+            0% { opacity: 1; transform: translateX(0); }
+            70% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(100%); visibility: hidden; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="toast" class="fixed top-5 right-5 z-50 w-80"></div>
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">👥 System Users</h1>
+            <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow hover:shadow-md transition">← Back to Dashboard</a>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">➕ Add New User</h2>
+            <form id="userForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="text" id="fullName" placeholder="Full Name" required class="border rounded-xl px-4 py-2">
+                <input type="text" id="username" placeholder="Username" required class="border rounded-xl px-4 py-2">
+                <input type="password" id="password" placeholder="Password" required class="border rounded-xl px-4 py-2">
+                <select id="role" required class="border rounded-xl px-4 py-2">
+                    <option value="viewer">Viewer</option>
+                    <option value="secretary">Secretary</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button type="submit" class="bg-emerald-600 text-white rounded-xl px-4 py-2 hover:bg-emerald-700">Add User</button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-gray-100">
+                    <tr><th class="p-4">Full Name</th><th>Username</th><th>Role</th><th class="text-center">Actions</th></tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">Edit User</h3>
+            <input type="hidden" id="editId">
+            <input type="text" id="editFullName" placeholder="Full Name" class="w-full border rounded-xl px-4 py-2 mb-3">
+            <input type="text" id="editUsername" placeholder="Username" class="w-full border rounded-xl px-4 py-2 mb-3">
+            <input type="password" id="editPassword" placeholder="New password (leave blank to keep unchanged)" class="w-full border rounded-xl px-4 py-2 mb-3">
+            <select id="editRole" class="w-full border rounded-xl px-4 py-2 mb-4">
+                <option value="viewer">Viewer</option>
+                <option value="secretary">Secretary</option>
+                <option value="admin">Admin</option>
+            </select>
+            <div class="flex gap-3">
+                <button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl">Save</button>
+                <button onclick="closeModal()" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/system-users';
+        let users = [];
+
+        function showToast(msg, type='success') {
+            const toastDiv = document.getElementById('toast');
+            toastDiv.innerHTML = `<div class="bg-white border-l-4 ${type==='success'?'border-emerald-500':'border-red-500'} shadow-lg rounded-xl p-3">${msg}</div>`;
+            setTimeout(() => toastDiv.innerHTML = '', 3000);
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await axios.get(API);
+                users = res.data;
+                renderTable();
+            } catch(err) { showToast('Failed to load users', 'error'); }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const row = `<tr class="border-b hover:bg-gray-50">
+                    <td class="p-4">${escapeHtml(u.fullName)}</td>
+                    <td class="p-4">${escapeHtml(u.username)}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-semibold ${u.role==='admin'?'bg-red-100 text-red-700':u.role==='secretary'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-700'}">${u.role}</span></td>
+                    <td class="p-4 text-center">
+                        <button onclick="openEdit('${u._id}')" class="text-blue-600 mr-3"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteUser('${u._id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                fullName: document.getElementById('fullName').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value
+            };
+            if (!data.fullName || !data.username || !data.password) return showToast('All fields required', 'error');
+            try {
+                await axios.post(API, data);
+                showToast('User added');
+                document.getElementById('userForm').reset();
+                loadUsers();
+            } catch(err) { showToast(err.response?.data?.message || 'Error', 'error'); }
+        });
+
+        function openEdit(id) {
+            const user = users.find(u => u._id === id);
+            if (!user) return;
+            document.getElementById('editId').value = id;
+            document.getElementById('editFullName').value = user.fullName;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        window.closeModal = () => document.getElementById('editModal').classList.add('hidden');
+
+        window.saveEdit = async () => {
+            const id = document.getElementById('editId').value;
+            const data = {
+                fullName: document.getElementById('editFullName').value.trim(),
+                username: document.getElementById('editUsername').value.trim(),
+                role: document.getElementById('editRole').value,
+                password: document.getElementById('editPassword').value
+            };
+            if (!data.fullName || !data.username) return showToast('Full name and username required', 'error');
+            try {
+                await axios.put(`${API}/${id}`, data);
+                showToast('User updated');
+                closeModal();
+                loadUsers();
+            } catch(err) { showToast('Update failed', 'error'); }
+        };
+
+        window.deleteUser = async (id) => {
+            if (!confirm('Delete this user?')) return;
+            try {
+                await axios.delete(`${API}/${id}`);
+                showToast('User deleted');
+                loadUsers();
+            } catch(err) { showToast(err.response?.data?.message || 'Delete failed', 'error'); }
+        };
+
+        loadUsers();
+    </script>
+</body>
+</html>
