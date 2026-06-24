@@ -11,6 +11,10 @@ import MongoStore from 'connect-mongo';
 import Recipient from './models/Recipient.js';
 import fetch from 'node-fetch';
 import axios from 'axios';
+import { sendEmail, welcomeEmail, followUpReminder } from './services/emailService.js';
+import cron from 'node-cron';
+import SystemUser from './models/SystemUser.js';
+import twilio from 'twilio';
 
 
 // Create __dirname equivalent for ES Modules
@@ -50,6 +54,8 @@ const followUpSchema = new mongoose.Schema({
     byWho: String,
     dateFollowedUp: String,
     phoneNumber: String,
+    email: { type: String, default: '' },   // new field
+    lastReminderSent: { type: Date, default: null },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });  // No collection override
 
@@ -149,6 +155,88 @@ const Message = mongoose.model('Message', messageSchema);
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
 
+//const systemUserSchema = new mongoose.Schema({
+   // username: { type: String, required: true, unique: true },
+   // passwordHash: { type: String, required: true },
+    //role: { type: String, enum: ['admin', 'secretary', 'viewer'], default: 'viewer' },
+   // fullName: String,
+   /// createdAt: { type: Date, default: Date.now }
+//});
+
+//const SystemUser = mongoose.model('SystemUser', systemUserSchema);
+
+// Start cron job after models are defined
+cron.schedule('0 8 * * *', async () => {
+    console.log('Running overdue follow‑up check...');
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const overdue = await FollowUp.find({ dateFollowedUp: { $lt: cutoff } });
+    if (overdue.length) {
+        const html = `<h3>Overdue Follow‑ups (${overdue.length})</h3><ul>${overdue.map(f => `<li>${f.name} - ${f.recentFollowUp}</li>`).join('')}</ul>`;
+        await sendEmail('mensahjoe1887@gmail.com', 'Overdue Follow‑ups Report', html);
+        console.log('Overdue report email sent');
+    } else {
+        console.log(`No overdue at ${new Date().toLocaleString()}`);
+    }
+
+const today = new Date();
+    const reminderIntervalDays = 7; // Send reminder every 7 days max
+
+    // 1. Summary email to pastor (always sent, regardless of reminder interval)
+    const summaryHtml = `<h3>Overdue Follow‑ups (${overdue.length})</h3><ul>${overdue.map(f => `<li>${f.name} – ${f.recentFollowUp || 'No note'}</li>`).join('')}</ul>`;
+    await sendEmail(process.env.PASTOR_EMAIL || 'pastor@church.com', 'Overdue Follow‑ups Summary', summaryHtml);
+
+    // 2. Send individual reminders only if needed
+    for (const fu of overdue) {
+        let shouldSend = false;
+        // If never sent before, send
+        if (!fu.lastReminderSent) {
+            shouldSend = true;
+        } else {
+            // Check if last reminder was more than reminderIntervalDays ago
+            const daysSinceLastReminder = (today - fu.lastReminderSent) / (1000 * 3600 * 24);
+            if (daysSinceLastReminder >= reminderIntervalDays) {
+                shouldSend = true;
+            }
+        }
+
+        if (!shouldSend) {
+            console.log(`Skipping reminder for ${fu.name} (last sent ${fu.lastReminderSent})`);
+            continue;
+        }
+
+        // Send SMS to the member (if phone exists)
+        if (fu.phoneNumber) {
+            const formattedPhone = formatPhoneForTwilio(fu.phoneNumber);
+            if (formattedPhone) {
+                const smsMessage = `Hello ${fu.name}, your last follow‑up was on ${dayjs(fu.dateFollowedUp).format('MMM D, YYYY')}. Please contact the church office to catch up.`;
+                const smsResult = await sendSms(formattedPhone, smsMessage);
+                if (smsResult.success) {
+                    console.log(`SMS sent to ${fu.name} (${formattedPhone})`);
+                } else {
+                    console.error(`Failed to send SMS to ${fu.name}: ${smsResult.error}`);
+                }
+                // Avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // Send individual email reminder to pastor (or assigned staff)
+        const recipientEmail = process.env.PASTOR_EMAIL || 'pastor@church.com';
+        const individualHtml = followUpReminder(fu.name, fu.recentFollowUp || 'No note');
+        await sendEmail(recipientEmail, `Follow‑up Reminder: ${fu.name}`, individualHtml);
+
+        // 🔁 Update lastReminderSent to today
+        fu.lastReminderSent = today;
+        await fu.save();
+
+        console.log(`Reminder sent for ${fu.name} (last sent updated to ${today})`);
+    }
+
+    console.log('All reminders processed.');
+
+});
+
 console.log('Models defined:', {
     User: !!User,
     FollowUp: !!FollowUp, 
@@ -175,26 +263,59 @@ app.use(session({
 
  app.use('/Public', express.static('Public')); 
 
-// Authentication
-const PREDEFINED_USER = {
-    username: 'Rccg@top',
-    password: bcrypt.hashSync('top2024', 10)
-};
-
 function isAuthenticated(req, res, next) {
     if (req.session.userId) return next();
     res.redirect('/login.html');
 }
 
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === PREDEFINED_USER.username && bcrypt.compareSync(password, PREDEFINED_USER.password)) {
-        req.session.userId = PREDEFINED_USER.username;
-        return res.json({ success: true, message: 'Login successful' });
-    }
-    res.status(400).json({ success: false, message: 'Invalid username or password' });
+app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.url}`);
+    next();
 });
 
+// Role-based authorization middleware
+function authorize(...allowedRoles) {
+    return (req, res, next) => {
+        if (!req.session.role) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        if (!allowedRoles.includes(req.session.role)) {
+            return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+        }
+        next();
+    };
+}
+
+app.get('/api/me', isAuthenticated, (req, res) => {
+    res.json({
+        username: req.session.username || 'Topadmin',
+        role: req.session.role || 'admin',
+        fullName: req.session.fullName || 'Administrator'
+    });
+});
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await SystemUser.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+        // Use passwordHash (not password) to match your model
+        const match = bcrypt.compareSync(password, user.passwordHash);
+        if (!match) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+        req.session.fullName = user.fullName;
+        res.json({ success: true, message: 'Login successful', role: user.role });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
 
 app.post('/api/users', async (req, res) => {
     const { name, phone, address, email, date, comment } = req.body;
@@ -303,6 +424,7 @@ app.put('/api/followups/:id', async (req, res) => {
     }
 });
 
+
 app.get('/api/followups/:id', async (req, res) => {
     console.log('GET single follow-up ID:', req.params.id);
     
@@ -359,10 +481,21 @@ app.get('/dashboard', isAuthenticated, (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+app.get('/api/get-email-by-name', isAuthenticated, async (req, res) => {
+    const { name } = req.query;
+    const user = await User.findOne({ name: new RegExp('^' + name + '$', 'i') });
+    res.json({ email: user ? user.email : null });
+});
+
 app.get('/api/followups/stats', async (req, res) => {
     const total = await FollowUp.countDocuments();
     const regular = await FollowUp.countDocuments({ status: 'Regular' });
     res.json({ total, regular, irregular: total - regular });
+});
+
+// Test route to debug bulk SMS
+app.get('/api/bulk-sms-test', (req, res) => {
+    res.json({ message: 'Bulk SMS route is reachable!' });
 });
 
 // @desc    Create new attendance record
@@ -376,7 +509,7 @@ let { name, phone, date, serviceType, category, gender, notes } = req.body;
             normalizedPhone = phone.replace(/\D/g, '');
 
             // Handle common Ghana formats: 0xxxxxxxxx → +233xxxxxxxxx
-            if (normalizedPhone.startsWith('0') && normalizedPhone.length === 11) {
+            if (normalizedPhone.startsWith('0') && normalizedPhone.length === 10) {
                 normalizedPhone = '233' + normalizedPhone.substring(1);
             }
             // Add + prefix if not present
@@ -828,73 +961,144 @@ app.get('/fix-dates', async (req, res) => {
 });
 
 app.post('/send-message', async (req, res) => {
-    const { name, phone } = req.body;   // ← use 'phone', not 'phoneNumber'
+    const { name, phone, message: customMessage } = req.body;
 
     if (!name || !phone) {
-        return res.status(400).json({
-            success: false,
-            message: "Name and phone number are required"
-        });
+        return res.status(400).json({ success: false, message: "Name and phone number are required" });
     }
 
-    // Format phone (remove spaces, dashes, etc.)
-const formattedPhone = phone.replace(/\D/g, '');
+    // Clean phone number (remove spaces, dashes, etc.)
+    const formattedPhone = phone.replace(/\D/g, '');
+    
+    // Ensure it starts with '+' for international format
+    const toPhone = formattedPhone.startsWith('+') ? formattedPhone : `+${formattedPhone}`;
+
+    const smsText = customMessage || `Welcome to RCCG Tabernacle Of Praise, ${name}. We are glad you are here!`;
 
     try {
-        const response = await fetch(
-            `${process.env.INFOBIP_BASE_URL}/sms/2/text/advanced`,
-            {
-                method: "POST",
-                headers: {
-                    "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    messages: [
-                        {
-                            destinations: [{ to: formattedPhone }],
-                            from: process.env.INFOBIP_SENDER_ID || "447491163443",
-                            text: `Welcome to RCCG Tabernacle Of Praise, ${name}. We are glad you are here. Enjoy the service!`
-                        }
-                    ]
-                })
-            }
-        );
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        
+        const message = await client.messages.create({
+            body: smsText,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: toPhone
+        });
+        
+        // Optional: save to database
+        await Message.create({ name, phone: formattedPhone, message: smsText });
+        
+        res.json({ success: true, message: "SMS sent successfully", messageSid: message.sid });
+    } catch (error) {
+        console.error("Twilio SMS error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
-        const result = await response.json();
+function formatPhoneForTwilio(phone) {
+    if (!phone) return null;
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) cleaned = '233' + cleaned.substring(1);
+    if (!cleaned.startsWith('+')) cleaned = '+' + cleaned;
+    return cleaned.length === 13 ? cleaned : null;
+}
 
-        // Better error handling
-        if (!response.ok) {
-            console.error("Infobip error:", result);
-            throw new Error(
-                result.requestError?.serviceException?.text ||
-                result.message ||
-                "Infobip API error"
-            );
+async function sendSms(phoneNumber, message) {
+    if (!phoneNumber) return { success: false, error: 'No phone number' };
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    try {
+        const result = await client.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phoneNumber
+        });
+        console.log('📲 Twilio response:', result.status, result.sid);
+        return { success: true, sid: result.sid, status: result.status };
+    } catch (error) {
+        console.error('Twilio SMS error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Bulk SMS – send to multiple phone numbers
+// ==================== BULK SMS ====================
+app.post('/api/bulk-sms', isAuthenticated, async (req, res) => {
+    try {
+        console.log('📩 Bulk SMS request received:', req.body);
+        const { phoneNumbers, message } = req.body;
+
+        if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+            console.log('❌ No phone numbers provided');
+            return res.status(400).json({ success: false, message: 'No phone numbers provided' });
         }
 
-        // ✅ Optional: Save message to DB (recommended)
-        await Message.create({
-            name,
-            phone: formattedPhone,
-            message: "Welcome SMS sent"
-        });
+        if (!message || message.trim().length === 0) {
+            console.log('❌ Empty message');
+            return res.status(400).json({ success: false, message: 'Message cannot be empty' });
+        }
 
-        res.status(200).json({
+        console.log(`📤 Sending bulk SMS to ${phoneNumbers.length} numbers`);
+
+        const results = [];
+        let successCount = 0;
+        let failureCount = 0;
+
+        for (const phone of phoneNumbers) {
+            const formattedPhone = formatPhoneForTwilio(phone);
+            if (!formattedPhone) {
+                console.log(`⚠️ Invalid phone: ${phone}`);
+                results.push({ phone, success: false, error: 'Invalid phone format' });
+                failureCount++;
+                continue;
+            }
+
+            console.log(`📲 Sending to ${formattedPhone}...`);
+            const smsResult = await sendSms(formattedPhone, message);
+            if (smsResult.success) {
+                successCount++;
+                results.push({ phone, success: true, sid: smsResult.sid });
+                console.log(`✅ Sent to ${formattedPhone}`);
+            } else {
+                failureCount++;
+                results.push({ phone, success: false, error: smsResult.error });
+                console.log(`❌ Failed to send to ${formattedPhone}: ${smsResult.error}`);
+            }
+            // Small delay to respect Twilio rate limits
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        const responsePayload = {
             success: true,
-            message: "SMS sent successfully",
-            data: result
-        });
-
+            summary: { total: phoneNumbers.length, success: successCount, failure: failureCount },
+            details: results
+        };
+        console.log('📤 Sending response:', responsePayload);
+        res.json(responsePayload);
     } catch (error) {
-        console.error("SMS FAILED:", error.message);
+        console.error('🔥 Bulk SMS error:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to send SMS",
-            error: error.message
-        });
+
+// Send email to a member (from frontend)
+app.post('/api/send-email', isAuthenticated, async (req, res) => {
+    const { to, subject, message, memberName, template } = req.body;
+    if (!to) return res.status(400).json({ success: false, message: 'Recipient email is required' });
+
+    let html = '';
+    if (template === 'welcome' && memberName) {
+        html = welcomeEmail(memberName);
+    } else if (template === 'followup' && memberName && message) {
+        html = followUpReminder(memberName, message);
+    } else {
+        html = `<p>${message || 'No additional message.'}</p>`;
+    }
+
+    const result = await sendEmail(to, subject || 'Message from RCCG TOP', html);
+    if (result.success) {
+        res.json({ success: true, message: 'Email sent successfully' });
+    } else {
+        res.status(500).json({ success: false, message: result.error });
     }
 });
 
@@ -1134,14 +1338,9 @@ app.get('/api/debug-model', async (req, res) => {
 
 const port = 3000;
 app.listen(port, () => {
+    console.log('Server time:', new Date().toString());
     console.log(`Server running on http://localhost:${port}`);
-    console.log('Available routes:');
-    console.log('  GET  /api/users');
-    console.log('  GET  /api/followups');
-    console.log('  GET  /api/attendance');
-    console.log('  GET  /api/attendance/stats');
-    console.log('  GET  /api/messages');
-    console.log('  GET  /api/test');
-    console.log('  GET  /api/test-db');
-    console.log('  POST /api/login');
+    console.log('Cron job scheduled for every 8pm');
+    console.log('TWILIO_SID:', process.env.TWILIO_ACCOUNT_SID);
+    console.log('TWILIO_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? 'exists' : 'missing');
 });

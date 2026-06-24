@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/common.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
         .toast-message { animation: slideOut 3s forwards; }
@@ -22,7 +23,7 @@
     <div id="toast" class="fixed top-5 right-5 z-50 w-80"></div>
     <div class="max-w-6xl mx-auto p-6">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">👥 System Users</h1>
+            <h1 class="text-3xl font-bold text-gray-800">👥 Manage System Users</h1>
             <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow hover:shadow-md transition">← Back to Dashboard</a>
         </div>
 
@@ -82,7 +83,7 @@
         }
 
         async function loadUsers() {
-            try {
+            try { // This API endpoint will now be protected by 'admin' role
                 const res = await axios.get(API);
                 users = res.data;
                 renderTable();
@@ -111,7 +112,7 @@
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
-                fullName: document.getElementById('fullName').value.trim(),
+                fullName: document.getElementById('fullName').value.trim(), // Note: SystemUser model doesn't have fullName, only username
                 username: document.getElementById('username').value.trim(),
                 password: document.getElementById('password').value,
                 role: document.getElementById('role').value
@@ -129,7 +130,7 @@
             const user = users.find(u => u._id === id);
             if (!user) return;
             document.getElementById('editId').value = id;
-            document.getElementById('editFullName').value = user.fullName;
+            // document.getElementById('editFullName').value = user.fullName; // SystemUser model doesn't have fullName
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editRole').value = user.role;
             document.getElementById('editPassword').value = '';
@@ -141,7 +142,7 @@
         window.saveEdit = async () => {
             const id = document.getElementById('editId').value;
             const data = {
-                fullName: document.getElementById('editFullName').value.trim(),
+                // fullName: document.getElementById('editFullName').value.trim(), // SystemUser model doesn't have fullName
                 username: document.getElementById('editUsername').value.trim(),
                 role: document.getElementById('editRole').value,
                 password: document.getElementById('editPassword').value
@@ -164,7 +165,11 @@
             } catch(err) { showToast(err.response?.data?.message || 'Delete failed', 'error'); }
         };
 
-        loadUsers();
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme(); // From common.js
+            loadUsers(); // Initial load is now handled by fetchUserRole in common.js
+        });
     </script>
 </body>
 </html>

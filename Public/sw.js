@@ -3,9 +3,10 @@ const urlsToCache = [
   '/',
   '/login.html',
   '/index.html',
-  '/followup.html',
+  '/follow-up.html',
   '/attendance.html',
   '/dashboard.html',
+  '/common.js',
   '/manifest.json',
   '/offline.html'
 ];

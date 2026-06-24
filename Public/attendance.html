@@ -425,28 +425,6 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Dark mode
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const btn = document.getElementById('darkModeToggle');
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-        }
-        function initTheme() {
-            const saved = localStorage.getItem('theme');
-            const html = document.documentElement;
-            const btn = document.getElementById('darkModeToggle');
-            if (saved === 'dark') {
-                html.classList.add('dark');
-                btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-            } else {
-                html.classList.remove('dark');
-                btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-            }
-        }
-
         // Load stats
         async function loadStats() {
             try {
@@ -729,32 +707,9 @@ document.getElementById('editAttendanceForm').addEventListener('submit', async (
         });
 
         // Initialize
-        initTheme();
         loadStats();
         loadAttendance();
-
-        // Fetch current user role
-let currentUserRole = 'viewer';
-
-async function fetchUserRole() {
-    try {
-        const res = await axios.get('/api/me');
-        currentUserRole = res.data.role;
-        // Re-render any dynamic tables/buttons that depend on role
-        if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
-        if (typeof renderTable === 'function') renderTable();   // adjust to your table render function
-        // Hide/show add forms for viewers
-        if (currentUserRole === 'viewer') {
-            document.querySelectorAll('form, .submit-btn, .action-btn, .delete, .edit, .checkout').forEach(el => {
-                if (el.tagName === 'BUTTON' || el.tagName === 'FORM') el.style.display = 'none';
-            });
-        }
-    } catch (err) { console.error('Role fetch failed'); }
-}
-
-// Call after page loads
-fetchUserRole();
-
 </script>
+<script src="/common.js"></script>
 </body>
 </html>

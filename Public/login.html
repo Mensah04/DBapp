@@ -10,6 +10,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-title" content="RCCG TOP">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="common.js"></script> 
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
@@ -321,46 +323,7 @@
             }
         });
     </script>
-    <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('SW registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
-        });
-    }
-
-    // Optional: Show install prompt (for browsers that support it)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // Show a custom install button (optional)
-        const installBtn = document.createElement('button');
-        installBtn.textContent = '📲 Install App';
-        installBtn.style.position = 'fixed';
-        installBtn.style.bottom = '20px';
-        installBtn.style.right = '20px';
-        installBtn.style.backgroundColor = '#10b981';
-        installBtn.style.color = 'white';
-        installBtn.style.border = 'none';
-        installBtn.style.padding = '10px 20px';
-        installBtn.style.borderRadius = '50px';
-        installBtn.style.zIndex = '9999';
-        installBtn.style.cursor = 'pointer';
-        installBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        installBtn.onclick = () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(choice => {
-                if (choice.outcome === 'accepted') console.log('User accepted install');
-                deferredPrompt = null;
-                installBtn.remove();
-            });
-        };
-        document.body.appendChild(installBtn);
-    });
-</script>
+    <script src="/common.js"></script>
 
 </body>
 </html>

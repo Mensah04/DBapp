@@ -39,22 +39,15 @@
         const API_URL = 'http://localhost:3000/api/messages';
         // Set current year in footer
         document.getElementById('year').textContent = new Date().getFullYear();
-
-        document.getElementById('messageForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-
-        // Load messages on page load
-        document.addEventListener('DOMContentLoaded', loadMessages);
  
             const statusElement = document.getElementById('message-status');
             statusElement.style.display = 'none';
             
             const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim();
+            const phone = document.getElementById('phoneNumber').value.trim();
             
             // Simple validation
-            if (!name || !phoneNumber) {
+            if (!name || !phone) {
                 statusElement.textContent = 'Please fill in all fields';
                 statusElement.className = 'error';
                 statusElement.style.display = 'block';
@@ -74,7 +67,7 @@
                 },
                 body: JSON.stringify({
                     name: name,
-                    phone: phoneN
+                    phone: phone
                 }),
             })
             .then(response => {
@@ -104,16 +97,7 @@
                 submitBtn.textContent = originalBtnText;
                 submitBtn.disabled = false;
             });
-        });
-
-        async function loadMessages() {
-            try {
-                const response = await axios.get(API_URL);
-                displayMessages(response.data);
-            } catch (error) {
-                console.error('Error loading messages:', error);
-            }
-        }
+        
 
     </script>
 </body>

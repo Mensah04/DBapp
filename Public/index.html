@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="/common.js"></script>
     <style>
         * { font-family: 'Inter', system-ui, sans-serif; }
         body { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); transition: background 0.2s; }
@@ -117,6 +118,9 @@
                 <button onclick="exportToCSV()" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
                     <i class="fa-solid fa-download"></i> Export CSV
                 </button>
+                 <button onclick="openBulkSmsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 shadow-sm transition">
+                <i class="fas fa-comment-sms"></i> Bulk SMS
+                </button>
                 <a href="dashboard.html" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
                     <i class="fa-solid fa-chart-line"></i> Dashboard
                 </a>
@@ -203,9 +207,13 @@
                                 <th onclick="sortTable('date')" style="cursor: pointer;">DATE <i class="fa-solid fa-sort ml-1"></i></th>
                                 <th onclick="sortTable('comment')" style="cursor: pointer;">COMMENT <i class="fa-solid fa-sort ml-1"></i></th>
                                 <th>ACTIONS</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
+                               <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                               </th>
                             </tr>
                         </thead>
-                        <tbody id="memberTable"></tbody>
+                        <tbody id="memberTable">
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -222,6 +230,24 @@
             <div id="editForm" class="space-y-5"></div>
         </div>
     </div>
+
+    <!-- Bulk SMS Modal -->
+<div id="bulkSmsModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop transition-all">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full mx-4 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-comment-sms text-purple-600"></i> Bulk SMS</h3>
+            <button onclick="closeBulkSmsModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+        </div>
+        <p class="text-sm text-gray-500 mb-3">Send a message to <span id="selectedCount">0</span> selected members.</p>
+        <textarea id="bulkSmsMessage" rows="4" class="w-full border rounded-xl p-3 mb-2" placeholder="Type your message..."></textarea>
+        <div class="text-right text-sm text-gray-500 mb-3"><span id="bulkCharCount">0</span> / 160 characters</div>
+        <div class="flex gap-3">
+            <button onclick="sendBulkSms()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl">Send SMS</button>
+            <button onclick="closeBulkSmsModal()" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
+        </div>
+        <div id="bulkSmsResult" class="mt-3 text-sm hidden"></div>
+    </div>
+</div>
 
     <script>
         const API_URL = '/api/users';
@@ -300,27 +326,36 @@
         }
 
         function renderTable(members) {
-            const tbody = document.getElementById('memberTable');
-            if (members.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400">No members found</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = members.map(m => `
-                <tr>
-                    <td>${escapeHtml(m.name)}</td>
-                    <td>${escapeHtml(m.phone)}</td>
-                    <td>${escapeHtml(m.address || '—')}</td>
-                    <td>${escapeHtml(m.email)}</td>
-                    <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
-                    <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
-                    <td>
-                        <button onclick="editMember('${m._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteMember('${m._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                
-            `).join('');
-        }
+    const tbody = document.getElementById('memberTable');
+    const canEdit = currentUserRole === 'admin' || currentUserRole === 'secretary';
+    const canDelete = currentUserRole === 'admin';
+    const canEmail = currentUserRole !== 'viewer';
+
+    if (members.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">No members found</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = members.map(m => `
+        <tr>
+            <td class="px-6 py-4 text-center">
+                <input type="checkbox" class="member-checkbox" value="${m._id}" data-phone="${m.phone}">
+            </td>
+            <td>${escapeHtml(m.name)}</td>
+            <td>${escapeHtml(m.phone)}</td>
+            <td>${escapeHtml(m.address || '—')}</td>
+            <td>${escapeHtml(m.email)}</td>
+            <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
+            <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
+            <td>
+                ${canEmail ? `<button onclick="emailMember('${m._id}', '${escapeHtml(m.name)}', '${escapeHtml(m.email)}')" class="text-indigo-600 hover:text-indigo-800 mr-2"><i class="fas fa-envelope"></i></button>` : ''}
+                <button onclick="showQR('${m._id}', '${escapeHtml(m.name)}')" class="text-purple-600 hover:text-purple-800 mr-2"><i class="fas fa-qrcode"></i></button>
+                ${canEdit ? `<button onclick="editMember('${m._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete ? `<button onclick="deleteMember('${m._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
 
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
 
@@ -450,52 +485,115 @@
         // Event listeners
         document.getElementById('searchInput').addEventListener('input', applyFiltersAndRender);
 
-        // Initialize
-        window.onload = () => {
-            initTheme();
-            loadMembers();
-        };
-    </script>
-    <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('SW registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
-        });
+        // Bulk SMS functions
+let selectedMemberIds = [];
+
+function toggleAllCheckboxes() {
+    const selectAll = document.getElementById('selectAll');
+    document.querySelectorAll('.member-checkbox').forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+    selectedMemberIds = Array.from(checkboxes).map(cb => cb.value);
+    document.getElementById('selectedCount').innerText = selectedMemberIds.length;
+}
+
+// Attach to each checkbox change event (you can add via event delegation)
+document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('member-checkbox')) {
+        updateSelectedCount();
+        // Uncheck "select all" if any unchecked
+        const all = document.querySelectorAll('.member-checkbox');
+        const checked = document.querySelectorAll('.member-checkbox:checked');
+        document.getElementById('selectAll').checked = all.length === checked.length;
+    }
+});
+
+function openBulkSmsModal() {
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    if (checked.length === 0) {
+        showToast('Please select at least one member', 'error');
+        return;
+    }
+    document.getElementById('selectedCount').innerText = checked.length;
+    document.getElementById('bulkSmsMessage').value = '';
+    document.getElementById('bulkCharCount').innerText = '0';
+    document.getElementById('bulkSmsResult').classList.add('hidden');
+    document.getElementById('bulkSmsModal').classList.remove('hidden');
+    document.getElementById('bulkSmsModal').classList.add('flex');
+}
+
+function closeBulkSmsModal() {
+    document.getElementById('bulkSmsModal').classList.add('hidden');
+    document.getElementById('bulkSmsModal').classList.remove('flex');
+}
+
+// Character counter for bulk SMS
+document.getElementById('bulkSmsMessage').addEventListener('input', function() {
+    const len = this.value.length;
+    document.getElementById('bulkCharCount').innerText = len;
+    if (len > 160) {
+        this.value = this.value.substring(0, 160);
+        document.getElementById('bulkCharCount').innerText = 160;
+        showToast('Message limited to 160 characters', 'error');
+    }
+});
+
+async function sendBulkSms() {
+    const message = document.getElementById('bulkSmsMessage').value.trim();
+    if (!message) {
+        showToast('Please enter a message', 'error');
+        return;
     }
 
-    // Optional: Show install prompt (for browsers that support it)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // Show a custom install button (optional)
-        const installBtn = document.createElement('button');
-        installBtn.textContent = '📲 Install App';
-        installBtn.style.position = 'fixed';
-        installBtn.style.bottom = '20px';
-        installBtn.style.right = '20px';
-        installBtn.style.backgroundColor = '#10b981';
-        installBtn.style.color = 'white';
-        installBtn.style.border = 'none';
-        installBtn.style.padding = '10px 20px';
-        installBtn.style.borderRadius = '50px';
-        installBtn.style.zIndex = '9999';
-        installBtn.style.cursor = 'pointer';
-        installBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        installBtn.onclick = () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(choice => {
-                if (choice.outcome === 'accepted') console.log('User accepted install');
-                deferredPrompt = null;
-                installBtn.remove();
-            });
-        };
-        document.body.appendChild(installBtn);
-    });
+    const checked = document.querySelectorAll('.member-checkbox:checked');
+    const phoneNumbers = Array.from(checked).map(cb => cb.dataset.phone).filter(p => p);
+    if (phoneNumbers.length === 0) {
+        showToast('No valid phone numbers selected', 'error');
+        return;
+    }
 
-</script>
+    const resultDiv = document.getElementById('bulkSmsResult');
+    resultDiv.classList.remove('hidden');
+    resultDiv.innerHTML = '<div class="text-center text-gray-500">Sending messages... please wait.</div>';
+
+    try {
+        const res = await axios.post('/api/bulk-sms', { phoneNumbers, message });
+        console.log('📬 Full response:', res); // Debug: see what we got
+
+        if (!res.data || typeof res.data !== 'object') {
+            throw new Error('Invalid response from server');
+        }
+
+        const { summary, details } = res.data;
+        const successCount = summary?.success || 0;
+        const failureCount = summary?.failure || 0;
+        const total = summary?.total || phoneNumbers.length;
+
+        let resultHtml = `<div class="mt-2">
+            <p><strong>Sent:</strong> ${successCount} / ${total}</p>
+            <p><strong>Failed:</strong> ${failureCount}</p>
+        </div>`;
+        if (failureCount > 0) {
+            resultHtml += `<div class="mt-2 text-xs text-red-500"><ul>${details.filter(d => !d.success).map(d => `<li>${d.phone}: ${d.error}</li>`).join('')}</ul></div>`;
+        }
+        resultDiv.innerHTML = resultHtml;
+        showToast(`Bulk SMS sent: ${successCount} successful, ${failureCount} failed`);
+        // Uncheck all after sending
+        document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('selectAll').checked = false;
+        updateSelectedCount();
+    } catch (err) {
+        console.error('🔥 Bulk SMS error:', err);
+        const errorMsg = err.response?.data?.message || err.message || 'Unknown error';
+        resultDiv.innerHTML = `<div class="text-red-500">Error: ${errorMsg}</div>`;
+        showToast('Bulk SMS failed: ' + errorMsg, 'error');
+    }
+}
+    </script>
 </body>
 </html>

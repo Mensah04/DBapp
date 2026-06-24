@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="/common.js"></script>
     <style>
         * { font-family: 'Inter', system-ui, sans-serif; }
         body { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); transition: background 0.2s; }
@@ -253,309 +254,245 @@
     </div>
 
     <script>
-        const API_URL = '/api/followups';
-        let allFollowUps = [];
-        let currentSort = { field: 'dateFollowedUp', direction: 'desc' };
+    const API_URL = '/api/followups';
+    let allFollowUps = [];
+    let currentSort = { field: 'dateFollowedUp', direction: 'desc' };
 
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast-message bg-white border-l-4 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-xl rounded-xl p-3 flex items-center gap-3 text-sm`;
-            toast.innerHTML = `<i class="fa-${type === 'success' ? 'solid fa-circle-check text-emerald-500' : 'solid fa-triangle-exclamation text-red-500'}"></i><span class="text-gray-700">${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        // Dark mode
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const btn = document.getElementById('darkModeToggle');
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-        }
-        function initTheme() {
-            const html = document.documentElement;
-            const btn = document.getElementById('darkModeToggle');
-            const saved = localStorage.getItem('theme');
-            if (saved === 'dark') {
-                html.classList.add('dark');
-                btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-            } else {
-                html.classList.remove('dark');
-                btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-            }
-        }
-
-        // Set max date and character counter
-        document.getElementById('dateFollowedUp').max = new Date().toISOString().split('T')[0];
-        const noteInput = document.getElementById('recentFollowUp');
-        const noteCount = document.getElementById('noteCount');
-        noteInput.addEventListener('input', () => noteCount.innerText = noteInput.value.length);
-
-        async function loadFollowUps() {
-            try {
-                const res = await axios.get(`${API_URL}?range=all`);
-                allFollowUps = res.data;
-                applyFiltersAndRender();
-            } catch (err) {
-                showToast('Failed to load follow-ups', 'error');
-            }
-        }
-
-        function applyFiltersAndRender() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            let filtered = allFollowUps.filter(fu => {
-                const matchesSearch = fu.name.toLowerCase().includes(searchTerm) || 
-                                     (fu.phoneNumber && fu.phoneNumber.includes(searchTerm)) ||
-                                     (fu.status && fu.status.toLowerCase().includes(searchTerm));
-                const matchesStatus = statusFilter === '' || fu.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            // sorting
-            filtered.sort((a, b) => {
-                let aVal = a[currentSort.field] || '';
-                let bVal = b[currentSort.field] || '';
-                if (currentSort.field === 'dateFollowedUp') {
-                    aVal = new Date(aVal);
-                    bVal = new Date(bVal);
-                }
-                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-            renderTable(filtered);
-            document.getElementById('recordCount').innerText = `${filtered.length} record(s)`;
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('followUpTable');
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400">No follow-ups found</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = data.map(fu => {
-                const statusClass = fu.status === 'Regular' ? 'bg-emerald-100 text-emerald-700' :
-                                   (fu.status === 'Irregular' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
-                return `<tr>
-                    <td>${escapeHtml(fu.name)}</td>
-                    <td><span class="status-badge ${statusClass}">${fu.status}</span></td>
-                    <td>${escapeHtml(fu.recentFollowUp?.substring(0, 70) || '—')}</td>
-                    <td>${escapeHtml(fu.byWho)}</td>
-                    <td>${dayjs(fu.dateFollowedUp).format('MMM D, YYYY')}</td>
-                    <td>${fu.phoneNumber || '—'}</td>
-                    <td>
-                        <button onclick="editFollowUp('${fu._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteFollowUp('${fu._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-
-        function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
-
-        function sortTable(field) {
-            if (currentSort.field === field) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.field = field;
-                currentSort.direction = 'asc';
-            }
-            applyFiltersAndRender();
-        }
-
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            applyFiltersAndRender();
-        }
-
-        // Form submit
-        document.getElementById('followUpForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = {
-                name: document.getElementById('name').value.trim(),
-                status: document.getElementById('status').value,
-                recentFollowUp: document.getElementById('recentFollowUp').value.trim(),
-                byWho: document.getElementById('byWho').value.trim(),
-                dateFollowedUp: document.getElementById('dateFollowedUp').value,
-                phoneNumber: document.getElementById('phoneNumber').value.trim()
-            };
-            if (!formData.name || !formData.status || !formData.recentFollowUp || !formData.byWho || !formData.dateFollowedUp || !formData.phoneNumber) {
-                showToast('Please fill all required fields', 'error');
-                return;
-            }
-            try {
-                await axios.post(API_URL, formData);
-                showToast('Follow-up recorded successfully!');
-                e.target.reset();
-                noteCount.innerText = '0';
-                loadFollowUps();
-            } catch (err) {
-                showToast(err.response?.data?.message || 'Failed to save', 'error');
-            }
-        });
-
-        // Edit modal
-        async function editFollowUp(id) {
-            try {
-                const res = await axios.get(`${API_URL}/${id}`);
-                const fu = res.data;
-                const modal = document.getElementById('editModal');
-                const formHTML = `
-                    <input type="hidden" id="edit-id" value="${fu._id}">
-                    <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(fu.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Status</label><select id="edit-status" class="w-full px-4 py-3 border rounded-2xl mt-1">
-                        <option value="Regular" ${fu.status==='Regular'?'selected':''}>Regular</option>
-                        <option value="Irregular" ${fu.status==='Irregular'?'selected':''}>Irregular</option>
-                        <option value="Visitor" ${fu.status==='Visitor'?'selected':''}>Visitor</option>
-                        <option value="First Timer" ${fu.status==='First Timer'?'selected':''}>First Timer</option>
-                    </select></div>
-                    <div><label class="text-sm font-semibold">Follow-Up Note</label><textarea id="edit-recent" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(fu.recentFollowUp)}</textarea></div>
-                    <div class="grid grid-cols-2 gap-4"><div><label class="text-sm font-semibold">Followed By</label><input id="edit-bywho" value="${escapeHtml(fu.byWho)}" class="w-full px-4 py-3 border rounded-2xl"></div>
-                    <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${fu.dateFollowedUp?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl"></div></div>
-                    <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${fu.phoneNumber}" class="w-full px-4 py-3 border rounded-2xl"></div>
-                    <div class="flex gap-3 mt-6"><button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button><button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button></div>
-                `;
-                document.getElementById('editForm').innerHTML = formHTML;
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            } catch (err) {
-                showToast('Failed to load follow-up', 'error');
-            }
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('editModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        async function saveEdit() {
-            const id = document.getElementById('edit-id').value;
-            const data = {
-                name: document.getElementById('edit-name').value,
-                status: document.getElementById('edit-status').value,
-                recentFollowUp: document.getElementById('edit-recent').value,
-                byWho: document.getElementById('edit-bywho').value,
-                dateFollowedUp: document.getElementById('edit-date').value,
-                phoneNumber: document.getElementById('edit-phone').value
-            };
-            try {
-                await axios.put(`${API_URL}/${id}`, data);
-                showToast('Updated successfully');
-                closeModal();
-                loadFollowUps();
-            } catch (err) {
-                showToast('Update failed', 'error');
-            }
-        }
-
-        async function deleteFollowUp(id) {
-            if (!confirm('Delete this follow-up record?')) return;
-            try {
-                await axios.delete(`${API_URL}/${id}`);
-                showToast('Deleted');
-                loadFollowUps();
-            } catch (err) {
-                showToast('Delete failed', 'error');
-            }
-        }
-
-        function exportToCSV() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            let filtered = allFollowUps.filter(fu => {
-                const matchesSearch = fu.name.toLowerCase().includes(searchTerm) || (fu.phoneNumber && fu.phoneNumber.includes(searchTerm));
-                const matchesStatus = statusFilter === '' || fu.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            if (filtered.length === 0) return showToast('No data to export', 'error');
-            const headers = ['Name', 'Status', 'Recent Follow-Up', 'By', 'Date', 'Phone'];
-            const rows = filtered.map(f => [f.name, f.status, f.recentFollowUp, f.byWho, dayjs(f.dateFollowedUp).format('YYYY-MM-DD'), f.phoneNumber]);
-            const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-            const blob = new Blob([csv], {type: 'text/csv'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `followups_${dayjs().format('YYYY-MM-DD')}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('CSV exported');
-        }
-
-        // Event listeners
-        document.getElementById('searchInput').addEventListener('input', applyFiltersAndRender);
-        document.getElementById('statusFilter').addEventListener('change', applyFiltersAndRender);
-
-        window.onload = () => {
-            initTheme();
-            loadFollowUps();
-        };
-    </script>
-    <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('SW registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
-        });
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-message bg-white border-l-4 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-xl rounded-xl p-3 flex items-center gap-3 text-sm`;
+        toast.innerHTML = `<i class="fa-${type === 'success' ? 'solid fa-circle-check text-emerald-500' : 'solid fa-triangle-exclamation text-red-500'}"></i><span class="text-gray-700">${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
-    // Optional: Show install prompt (for browsers that support it)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // Show a custom install button (optional)
-        const installBtn = document.createElement('button');
-        installBtn.textContent = '📲 Install App';
-        installBtn.style.position = 'fixed';
-        installBtn.style.bottom = '20px';
-        installBtn.style.right = '20px';
-        installBtn.style.backgroundColor = '#10b981';
-        installBtn.style.color = 'white';
-        installBtn.style.border = 'none';
-        installBtn.style.padding = '10px 20px';
-        installBtn.style.borderRadius = '50px';
-        installBtn.style.zIndex = '9999';
-        installBtn.style.cursor = 'pointer';
-        installBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        installBtn.onclick = () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(choice => {
-                if (choice.outcome === 'accepted') console.log('User accepted install');
-                deferredPrompt = null;
-                installBtn.remove();
+    // Set max date and character counter
+    document.getElementById('dateFollowedUp').max = new Date().toISOString().split('T')[0];
+    const noteInput = document.getElementById('recentFollowUp');
+    const noteCount = document.getElementById('noteCount');
+    noteInput.addEventListener('input', () => noteCount.innerText = noteInput.value.length);
+
+    async function loadFollowUps() {
+        try {
+            const res = await axios.get(`${API_URL}?range=all`);
+            allFollowUps = res.data;
+            applyFiltersAndRender();
+        } catch (err) {
+            console.error('Load error:', err);
+            showToast('Failed to load follow-ups', 'error');
+        }
+    }
+
+    function applyFiltersAndRender() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        let filtered = allFollowUps.filter(fu => {
+            const matchesSearch = fu.name.toLowerCase().includes(searchTerm) || 
+                                 (fu.phoneNumber && fu.phoneNumber.includes(searchTerm)) ||
+                                 (fu.status && fu.status.toLowerCase().includes(searchTerm));
+            const matchesStatus = statusFilter === '' || fu.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+        filtered.sort((a, b) => {
+            let aVal = a[currentSort.field] || '';
+            let bVal = b[currentSort.field] || '';
+            if (currentSort.field === 'dateFollowedUp') {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            }
+            if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+        renderTable(filtered);
+        document.getElementById('recordCount').innerText = `${filtered.length} record(s)`;
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('followUpTable');
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400">No follow-ups found</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(fu => {
+            const statusClass = fu.status === 'Regular' ? 'bg-emerald-100 text-emerald-700' :
+                               (fu.status === 'Irregular' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
+            return `<tr>
+                <td>${escapeHtml(fu.name)}</td>
+                <td><span class="status-badge ${statusClass}">${fu.status}</span></td>
+                <td>${escapeHtml(fu.recentFollowUp?.substring(0, 70) || '—')}</td>
+                <td>${escapeHtml(fu.byWho)}</td>
+                <td>${dayjs(fu.dateFollowedUp).format('MMM D, YYYY')}</td>
+                <td>${fu.phoneNumber || '—'}</td>
+                <td>
+                    <button onclick="editFollowUp('${fu._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteFollowUp('${fu._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function emailFollowUp(id, name, email) {
+        if (!email) {
+            showToast('No email address for this member', 'error');
+            return;
+        }
+        const subject = prompt('Subject:', `Follow‑up reminder for ${name}`);
+        if (!subject) return;
+        const message = prompt('Message:', 'Please check on this member.');
+        if (!message) return;
+        try {
+            await axios.post('/api/send-email', {
+                to: email,
+                subject: subject,
+                message: message,
+                memberName: name,
+                template: 'followup'
             });
+            showToast('Email sent');
+        } catch (err) {
+            showToast('Failed to send email', 'error');
+        }
+    }
+
+    function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
+
+    function sortTable(field) {
+        if (currentSort.field === field) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.field = field;
+            currentSort.direction = 'asc';
+        }
+        applyFiltersAndRender();
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        applyFiltersAndRender();
+    }
+
+    // Form submit
+    document.getElementById('followUpForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            name: document.getElementById('name').value.trim(),
+            status: document.getElementById('status').value,
+            recentFollowUp: document.getElementById('recentFollowUp').value.trim(),
+            byWho: document.getElementById('byWho').value.trim(),
+            dateFollowedUp: document.getElementById('dateFollowedUp').value,
+            phoneNumber: document.getElementById('phoneNumber').value.trim()
         };
-        document.body.appendChild(installBtn);
+        if (!formData.name || !formData.status || !formData.recentFollowUp || !formData.byWho || !formData.dateFollowedUp || !formData.phoneNumber) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+        try {
+            await axios.post(API_URL, formData);
+            showToast('Follow-up recorded successfully!');
+            e.target.reset();
+            noteCount.innerText = '0';
+            loadFollowUps();
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to save', 'error');
+        }
     });
 
-
-    // Fetch current user role
-let currentUserRole = 'viewer';
-
-async function fetchUserRole() {
-    try {
-        const res = await axios.get('/api/me');
-        currentUserRole = res.data.role;
-        // Re-render any dynamic tables/buttons that depend on role
-        if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
-        if (typeof renderTable === 'function') renderTable();   // adjust to your table render function
-        // Hide/show add forms for viewers
-        if (currentUserRole === 'viewer') {
-            document.querySelectorAll('form, .submit-btn, .action-btn, .delete, .edit, .checkout').forEach(el => {
-                if (el.tagName === 'BUTTON' || el.tagName === 'FORM') el.style.display = 'none';
-            });
+    // Edit modal
+    async function editFollowUp(id) {
+        try {
+            const res = await axios.get(`${API_URL}/${id}`);
+            const fu = res.data;
+            const modal = document.getElementById('editModal');
+            const formHTML = `
+                <input type="hidden" id="edit-id" value="${fu._id}">
+                <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(fu.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                <div><label class="text-sm font-semibold">Status</label><select id="edit-status" class="w-full px-4 py-3 border rounded-2xl mt-1">
+                    <option value="Regular" ${fu.status==='Regular'?'selected':''}>Regular</option>
+                    <option value="Irregular" ${fu.status==='Irregular'?'selected':''}>Irregular</option>
+                    <option value="Visitor" ${fu.status==='Visitor'?'selected':''}>Visitor</option>
+                    <option value="First Timer" ${fu.status==='First Timer'?'selected':''}>First Timer</option>
+                </select></div>
+                <div><label class="text-sm font-semibold">Follow-Up Note</label><textarea id="edit-recent" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(fu.recentFollowUp)}</textarea></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-sm font-semibold">Followed By</label><input id="edit-bywho" value="${escapeHtml(fu.byWho)}" class="w-full px-4 py-3 border rounded-2xl"></div>
+                <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${fu.dateFollowedUp?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl"></div></div>
+                <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${fu.phoneNumber}" class="w-full px-4 py-3 border rounded-2xl"></div>
+                <div class="flex gap-3 mt-6"><button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button><button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button></div>
+            `;
+            document.getElementById('editForm').innerHTML = formHTML;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        } catch (err) {
+            showToast('Failed to load follow-up', 'error');
         }
-    } catch (err) { console.error('Role fetch failed'); }
-}
+    }
 
-// Call after page loads
-fetchUserRole();
+    function closeModal() {
+        const modal = document.getElementById('editModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    async function saveEdit() {
+        const id = document.getElementById('edit-id').value;
+        const data = {
+            name: document.getElementById('edit-name').value,
+            status: document.getElementById('edit-status').value,
+            recentFollowUp: document.getElementById('edit-recent').value,
+            byWho: document.getElementById('edit-bywho').value,
+            dateFollowedUp: document.getElementById('edit-date').value,
+            phoneNumber: document.getElementById('edit-phone').value
+        };
+        try {
+            await axios.put(`${API_URL}/${id}`, data);
+            showToast('Updated successfully');
+            closeModal();
+            loadFollowUps();
+        } catch (err) {
+            showToast('Update failed', 'error');
+        }
+    }
+
+    async function deleteFollowUp(id) {
+        if (!confirm('Delete this follow-up record?')) return;
+        try {
+            await axios.delete(`${API_URL}/${id}`);
+            showToast('Deleted');
+            loadFollowUps();
+        } catch (err) {
+            showToast('Delete failed', 'error');
+        }
+    }
+
+    function exportToCSV() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        let filtered = allFollowUps.filter(fu => {
+            const matchesSearch = fu.name.toLowerCase().includes(searchTerm) || (fu.phoneNumber && fu.phoneNumber.includes(searchTerm));
+            const matchesStatus = statusFilter === '' || fu.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+        if (filtered.length === 0) return showToast('No data to export', 'error');
+        const headers = ['Name', 'Status', 'Recent Follow-Up', 'By', 'Date', 'Phone'];
+        const rows = filtered.map(f => [f.name, f.status, f.recentFollowUp, f.byWho, dayjs(f.dateFollowedUp).format('YYYY-MM-DD'), f.phoneNumber]);
+        const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `followups_${dayjs().format('YYYY-MM-DD')}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast('CSV exported');
+    }
+
+    // Event listeners
+    document.getElementById('searchInput').addEventListener('input', applyFiltersAndRender);
+    document.getElementById('statusFilter').addEventListener('change', applyFiltersAndRender);
+
+    // Initialize
+    loadFollowUps();
 </script>
 </body>
 </html>
