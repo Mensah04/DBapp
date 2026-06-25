@@ -18,9 +18,49 @@ A complete church management system with member database, attendance tracking, f
 ## Installation
 1. Clone the repo
 2. Run `npm install`
-3. Create `.env` file with your Infobip SMS credentials (optional)
-4. Start MongoDB locally
-5. Run `node server.js`
-6. Visit `http://localhost:3000`
+3. Create a `.env` file in the project root to configure optional credentials and settings. Example entries:
 
-Default admin login: `admin` / `admin123`
+```
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+PASTOR_EMAIL=pastor@church.com
+PORT=3000
+```
+
+4. Ensure MongoDB is running locally (default URI: `mongodb://localhost:27017/followups`) or set `MONGODB_URI` in `.env`.
+5. Start the server in development mode:
+
+```bash
+npm install
+node server.js
+```
+
+6. Open the app at `http://localhost:3000`.
+
+7. Default admin: create a `SystemUser` document in the `systemusers` collection or use the existing script `seed-admin.js` (if present) to create an initial admin account.
+
+Testing
+
+- Basic API health check:
+
+```bash
+curl http://localhost:3000/api/test
+```
+
+- Fetch members:
+
+```bash
+curl http://localhost:3000/api/users
+```
+
+- Run automated tests (if you add tests):
+
+```bash
+npm test
+```
+
+Notes
+
+- The app uses ES modules (`type: module`); run with a recent Node.js LTS (>=16).
+- If you need to change the MongoDB URI or port, add `MONGODB_URI` and `PORT` to `.env` and update `server.js` accordingly.
