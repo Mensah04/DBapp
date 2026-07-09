@@ -24,13 +24,19 @@ const __dirname = path.dirname(__filename);
 // Dynamic import for node-fetch
 const app = express();
 
-app.get('/', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Root route – serve login.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Catch-all for missing routes (optional, for debugging)
+app.get('*', (req, res) => {
+    console.log('404 - Route not found:', req.url);
+    res.status(404).send('Page not found');
+});
 
 // Database Connection
 mongoose.connect('mongodb://localhost:27017/followups')
