@@ -469,10 +469,6 @@ app.get('/logout', (req, res) => {
         res.redirect('/login.html');
     });
 });
-
-app.get('/', (_req, res) => {
-    res.sendFile(__dirname + '/public/message.html');  
-});
 app.get('/protected', isAuthenticated, (_req, res) => {
     res.send('Protected content');
 });
