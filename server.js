@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
 });
 
 // Catch-all for missing routes (optional, for debugging)
-app.get('*', (req, res) => {
+app.get('/*splat', (req, res) => {
     console.log('404 - Route not found:', req.url);
     res.status(404).send('Page not found');
 });
