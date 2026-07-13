@@ -49,6 +49,30 @@ app.get('/debug-files', (req, res) => {
     });
 });
 
+import fs from 'fs';
+
+// Debug route – list files in the current directory and ./public
+app.get('/debug-ls', (req, res) => {
+    const cwd = process.cwd();
+    const publicPath = path.join(cwd, 'public');
+    let output = `<h3>Current directory: ${cwd}</h3><ul>`;
+    try {
+        const files = fs.readdirSync(cwd);
+        output += files.map(f => `<li>${f}</li>`).join('');
+        output += `</ul><h3>Public folder (${publicPath}):</h3><ul>`;
+        if (fs.existsSync(publicPath)) {
+            const publicFiles = fs.readdirSync(publicPath);
+            output += publicFiles.map(f => `<li>${f}</li>`).join('');
+        } else {
+            output += `<li>⚠️ Public folder not found</li>`;
+        }
+        output += `</ul>`;
+        res.send(output);
+    } catch (err) {
+        res.status(500).send(`Error: ${err.message}`);
+    }
+});
+
 // Catch-all for missing routes (optional, for debugging)
 app.get('/*splat', (req, res) => {
     console.log('404 - Route not found:', req.url);
