@@ -49,8 +49,6 @@ app.get('/debug-files', (req, res) => {
     });
 });
 
-import fs from 'fs';
-
 // Debug route – list files in the current directory and ./public
 app.get('/debug-ls', (req, res) => {
     const cwd = process.cwd();
