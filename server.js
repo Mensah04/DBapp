@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+(express.static(path.join(__dirname, 'public')));
 
 // Root route – serve login.html
 app.get('/', (req, res) => {
