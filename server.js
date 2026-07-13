@@ -32,6 +32,19 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+app.get('/debug-files', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.join(__dirname, 'public');
+    fs.readdir(dir, (err, files) => {
+        if (err) {
+            res.status(500).send('Error reading directory: ' + err.message);
+        } else {
+            res.json(files);
+        }
+    });
+});
+
 // Catch-all for missing routes (optional, for debugging)
 app.get('/*splat', (req, res) => {
     console.log('404 - Route not found:', req.url);
