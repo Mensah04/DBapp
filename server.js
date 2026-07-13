@@ -348,6 +348,13 @@ app.get('/seed', async (req, res) => {
     }
 });
 
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) {
+        return next();
+    }
+    res.redirect('/login.html');
+}
+
 app.get('/api/me', isAuthenticated, (req, res) => {
     res.json({
         username: req.session.username || 'Topadmin',
