@@ -16,13 +16,15 @@ import cron from 'node-cron';
 import SystemUser from './models/SystemUser.js';
 import twilio from 'twilio';
 import fs from 'fs';
-import dayjs from 'dayjs'; // 👈 added for cron
+import dayjs from 'dayjs'; /
+
 
 // Create __dirname equivalent for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // 👈 Add this line
 
 // ==================== MIDDLEWARE ====================
 app.use(cors({
