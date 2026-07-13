@@ -348,13 +348,6 @@ app.get('/seed', async (req, res) => {
     }
 });
 
-function isAuthenticated(req, res, next) {
-    if (req.session.userId) {
-        return next();
-    }
-    res.redirect('/login.html');
-}
-
 app.get('/api/me', isAuthenticated, (req, res) => {
     res.json({
         username: req.session.username || 'Topadmin',
@@ -519,18 +512,24 @@ app.delete('/api/followups/:id', async (req, res) => {
     }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) {
+        return next();
+    }
+    res.redirect('/login.html');
+}
 
 app.get('/index.html', isAuthenticated, (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 app.get('/followup.html', isAuthenticated, (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'followup.html'));
 });
-
 app.get('/attendance.html', isAuthenticated, (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'attendance.html'));
+});
+app.get('/dashboard', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 app.get('/logout', (req, res) => {
@@ -1400,6 +1399,9 @@ app.get('/api/debug-model', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 
 const port = 3000;
 app.listen(port, () => {
