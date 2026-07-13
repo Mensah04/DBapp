@@ -40,8 +40,8 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { 
-        maxAge: 100000,
-        secure: process.env.NODE_ENV === 'production', // 👈 HTTPS fix
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'lax'
     },
