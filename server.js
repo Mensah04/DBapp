@@ -48,6 +48,11 @@ app.use(session({
     store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' })
 }));
 
+app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.url} - Session ID: ${req.session.id}, User: ${req.session.userId}`);
+    next();
+});
+
 // ==================== DATABASE CONNECTION ====================
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/followups')
   .then(() => console.log('Connected to MongoDB'))
@@ -352,14 +357,6 @@ app.get('/api/me', isAuthenticated, (req, res) => {
     });
 });
 
-app.get('/api/session-test', (req, res) => {
-    res.json({
-        sessionId: req.session.id,
-        userId: req.session.userId,
-        role: req.session.role
-    });
-});
-
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -367,11 +364,21 @@ app.post('/api/login', async (req, res) => {
         if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
         const match = bcrypt.compareSync(password, user.passwordHash);
         if (!match) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.role = user.role;
         req.session.fullName = user.fullName;
-        res.json({ success: true, message: 'Login successful', role: user.role });
+
+        // Force save and check for errors
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Session save error:', err);
+                return res.status(500).json({ success: false, message: 'Session save failed' });
+            }
+            console.log('✅ Session saved successfully for user:', user.username);
+            res.json({ success: true, message: 'Login successful', role: user.role });
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
