@@ -15,6 +15,8 @@ import { sendEmail, welcomeEmail, followUpReminder } from './services/emailServi
 import cron from 'node-cron';
 import SystemUser from './models/SystemUser.js';
 import twilio from 'twilio';
+import fs from 'fs';
+import path from 'path';
 
 
 // Create __dirname equivalent for ES Modules
@@ -29,13 +31,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Root route – serve login.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    const filePath = path.join(process.cwd(), 'public', 'login.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('File not found: ' + filePath);
+    }
 });
 
 app.get('/debug-files', (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    const dir = path.join(__dirname, 'public');
+    const dir = path.join(process.cwd(), 'public');
     fs.readdir(dir, (err, files) => {
         if (err) {
             res.status(500).send('Error reading directory: ' + err.message);
@@ -270,7 +275,7 @@ app.use(cors({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 app.use(session({
     secret: 'RCCG_TOP',
     resave: false,
