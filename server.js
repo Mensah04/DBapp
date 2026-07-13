@@ -248,6 +248,13 @@ cron.schedule('0 8 * * *', async () => {
 });
 
 // ==================== ROUTES ====================
+app.get('/api/session-test', (req, res) => {
+    res.json({
+        sessionId: req.session.id,
+        userId: req.session.userId,
+        role: req.session.role
+    });
+});
 
 // ---- Public routes ----
 app.get('/', (req, res) => {
@@ -341,6 +348,14 @@ app.get('/api/me', isAuthenticated, (req, res) => {
         username: req.session.username || 'Topadmin',
         role: req.session.role || 'admin',
         fullName: req.session.fullName || 'Administrator'
+    });
+});
+
+app.get('/api/session-test', (req, res) => {
+    res.json({
+        sessionId: req.session.id,
+        userId: req.session.userId,
+        role: req.session.role
     });
 });
 
