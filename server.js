@@ -301,15 +301,14 @@ app.use(session({
     secret: 'RCCG_TOP',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 100000 },
-store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' })}));
-
- app.use('/Public', express.static('Public')); 
-
-function isAuthenticated(req, res, next) {
-    if (req.session.userId) return next();
-    res.redirect('/login.html');
-}
+    cookie: { 
+        maxAge: 100000,
+        secure: process.env.NODE_ENV === 'production', // 👈 important for HTTPS
+        httpOnly: true,
+        sameSite: 'lax'
+    },
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' })
+}));
 
 app.use((req, res, next) => {
     console.log(`📨 ${req.method} ${req.url}`);
@@ -328,6 +327,26 @@ function authorize(...allowedRoles) {
         next();
     };
 }
+
+app.get('/seed', async (req, res) => {
+    try {
+        const existing = await SystemUser.findOne({ username: 'Topadmin' });
+        if (!existing) {
+            const hashed = bcrypt.hashSync('password123', 10);
+            await SystemUser.create({
+                username: 'Topadmin',
+                passwordHash: hashed,
+                role: 'admin',
+                fullName: 'Super Admin'
+            });
+            res.send('Admin user created.');
+        } else {
+            res.send('Admin already exists.');
+        }
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 
 app.get('/api/me', isAuthenticated, (req, res) => {
     res.json({
