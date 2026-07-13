@@ -258,6 +258,10 @@ app.get('/api/session-test', (req, res) => {
     });
 });
 
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
+});
+
 // ---- Public routes ----
 app.get('/', (req, res) => {
     const filePath = path.join(process.cwd(), 'public', 'login.html');
@@ -322,6 +326,7 @@ app.get('/seed', async (req, res) => {
 });
 
 // ---- Protected HTML pages ----
+// ---- Protected HTML pages ----
 app.get('/index.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
@@ -336,12 +341,6 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
 });
 app.get('/users.html', isAuthenticated, authorize('admin'), (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'users.html'));
-});
-app.get('/logout', (req, res) => {
-    req.session.destroy(() => res.redirect('/login.html'));
-});
-app.get('/protected', isAuthenticated, (req, res) => {
-    res.send('Protected content');
 });
 
 // ---- API Routes ----
@@ -498,16 +497,16 @@ app.get('/api/attendance/export/:type', isAuthenticated, async (req, res) => { /
 
 // Other API routes (send-message, send-email, bulk-sms, etc.) – keep as is.
 
+// ---- Static files (CSS, JS, images) ----
+// This must come AFTER all route handlers to avoid intercepting .html routes
+// ---- Static files (CSS, JS, images) ----
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // ---- Catch-all for missing routes (must be last) ----
 app.get('/*splat', (req, res) => {
     console.log('404 - Route not found:', req.url);
     res.status(404).send('Page not found');
 });
-
-// ---- Static files (CSS, JS, images) ----
-// This must come AFTER all route handlers to avoid intercepting .html routes
-app.use(express.static(path.join(process.cwd(), 'public')));
-
 // ==================== START SERVER ====================
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
