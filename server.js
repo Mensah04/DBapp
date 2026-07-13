@@ -44,17 +44,14 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'lax'
-        domain: '.onrender.com
+        //domain: '.onrender.com
     },
     store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' })
 }));
 
-let sessionStore;
-try {
-    sessionStore = MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' });
-} catch (err) {
-    console.error('❌ MongoStore creation error:', err);
-}
+const sessionStore = MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' });
+sessionStore.on('connected', () => console.log('✅ Session store connected to MongoDB'));
+sessionStore.on('error', (err) => console.error('❌ Session store error:', err));
 
 app.use(session({
     // ... 
