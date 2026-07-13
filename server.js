@@ -39,10 +39,9 @@ app.get('/*splat', (req, res) => {
 });
 
 // Database Connection
-mongoose.connect('mongodb://localhost:27017/followups')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/followups')
   .then(() => console.log('Connected to MongoDB'))
   .catch(error => console.error('MongoDB connection error:', error));
-
 // Schemas and Models
 const userSchema = new mongoose.Schema({
     name: String,
@@ -264,8 +263,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 100000 },
-    store: MongoStore.create({ mongoUrl: 'mongodb://localhost:27017/followups' })
-}));
+store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/followups' })}));
 
  app.use('/Public', express.static('Public')); 
 
