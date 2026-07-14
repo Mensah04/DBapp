@@ -71,6 +71,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     date: String,
     comment: String
+    memberCategory: { type: String, default: '' }
 });
 const followUpSchema = new mongoose.Schema({
     name: String,
@@ -385,7 +386,7 @@ app.get('/api/users/search', isAuthenticated, async (req, res) => {
 app.post('/api/users', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => {
     const { name, phone, address, email, date, comment } = req.body;
     if (await User.findOne({ phone })) return res.status(400).json({ message: 'Phone already exists' });
-    const newUser = new User({ name, phone, address, email, date, comment });
+    const newUser = new User({ name, phone, address, email, date, comment, memberCategory });
     await newUser.save();
     res.status(201).json(newUser);
 });
