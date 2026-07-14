@@ -384,12 +384,13 @@ app.get('/api/users/search', isAuthenticated, async (req, res) => {
     res.json(users);
 });
 app.post('/api/users', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => {
-    const { name, phone, address, email, date, comment } = req.body;
+    const { name, phone, address, email, date, comment, memberCategory } = req.body;
     if (await User.findOne({ phone })) return res.status(400).json({ message: 'Phone already exists' });
     const newUser = new User({ name, phone, address, email, date, comment, memberCategory });
     await newUser.save();
     res.status(201).json(newUser);
 });
+
 app.put('/api/users/:id', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => {
     const { name, phone, address, email, date, comment, memberCategory } = req.body;
     const updated = await User.findByIdAndUpdate(
