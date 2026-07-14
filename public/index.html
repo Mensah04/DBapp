@@ -23,7 +23,6 @@
             100% { opacity: 0; transform: translateX(30px); visibility: hidden; }
         }
         .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        /* Excel-style table */
         .excel-table {
             border-collapse: collapse;
             width: 100%;
@@ -43,58 +42,22 @@
             top: 0;
             z-index: 10;
         }
-        .excel-table tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-        .excel-table tr:hover {
-            background-color: #e5e7eb;
-            transition: 0.1s;
-        }
-        /* Dark mode */
+        .excel-table tr:nth-child(even) { background-color: #f9fafb; }
+        .excel-table tr:hover { background-color: #e5e7eb; transition: 0.1s; }
         html.dark {
             background: #0f172a;
         }
-        html.dark body {
-            background: #0f172a;
-        }
-        html.dark .bg-white {
-            background-color: #1e293b !important;
-            border-color: #334155 !important;
-        }
-        html.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 {
-            color: #f1f5f9 !important;
-        }
-        html.dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-600 {
-            color: #94a3b8 !important;
-        }
-        html.dark input, .dark select, .dark textarea {
-            background-color: #0f172a !important;
-            border-color: #475569 !important;
-            color: #e2e8f0 !important;
-        }
-        html.dark button.bg-white {
-            background-color: #1e293b !important;
-            border-color: #475569 !important;
-        }
-        html.dark .excel-table th {
-            background-color: #1e293b;
-            border-color: #475569;
-            color: #e2e8f0;
-        }
-        html.dark .excel-table td {
-            border-color: #475569;
-            color: #cbd5e1;
-        }
-        html.dark .excel-table tr:nth-child(even) {
-            background-color: #0f172a;
-        }
-        html.dark .excel-table tr:hover {
-            background-color: #334155;
-        }
-        html.dark .table-container {
-            border-color: #334155;
-            background: #1e293b;
-        }
+        html.dark body { background: #0f172a; }
+        html.dark .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+        html.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #f1f5f9 !important; }
+        html.dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-600 { color: #94a3b8 !important; }
+        html.dark input, .dark select, .dark textarea { background-color: #0f172a !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+        html.dark button.bg-white { background-color: #1e293b !important; border-color: #475569 !important; }
+        html.dark .excel-table th { background-color: #1e293b; border-color: #475569; color: #e2e8f0; }
+        html.dark .excel-table td { border-color: #475569; color: #cbd5e1; }
+        html.dark .excel-table tr:nth-child(even) { background-color: #0f172a; }
+        html.dark .excel-table tr:hover { background-color: #334155; }
+        html.dark .table-container { border-color: #334155; background: #1e293b; }
     </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -110,7 +73,7 @@
                     </div>
                     <div>
                         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Church Database</h1>
-                        <p class="text-gray-500 text-sm"><i class="fa-regular fa-address-card"></i>  Church Members & Visitors </p>
+                        <p class="text-gray-500 text-sm"><i class="fa-regular fa-address-card"></i>  Church Members & Visitors</p>
                     </div>
                 </div>
             </div>
@@ -118,8 +81,8 @@
                 <button onclick="exportToCSV()" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
                     <i class="fa-solid fa-download"></i> Export CSV
                 </button>
-                 <button onclick="openBulkSmsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 shadow-sm transition">
-                <i class="fas fa-comment-sms"></i> Bulk SMS
+                <button onclick="openBulkSmsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 shadow-sm transition">
+                    <i class="fas fa-comment-sms"></i> Bulk SMS
                 </button>
                 <a href="dashboard.html" class="bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2">
                     <i class="fa-solid fa-chart-line"></i> Dashboard
@@ -133,72 +96,68 @@
                 <button id="darkModeToggle" onclick="toggleDarkMode()" class="bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2.5 rounded-2xl text-sm font-medium transition shadow-sm">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-</div>
-
             </div>
         </div>
-   
+
         <!-- Two-column layout -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- LEFT: Sticky Add Member Form -->
-         <div class="lg:col-span-4">
-    <div class="sticky-form">
-        <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-all">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-user-plus text-emerald-600"></i> Add New Member
-            </h2>
-            <form id="userForm">
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
-                        <input type="text" id="name" required autocomplete="off" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+            <div class="lg:col-span-4">
+                <div class="sticky-form">
+                    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-all">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus text-emerald-600"></i> Add New Member
+                        </h2>
+                        <form id="userForm">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="name" required autocomplete="off" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
+                                    <input type="tel" id="phone" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+                                    <input type="text" id="address" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                                    <input type="email" id="email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                                    <input type="date" id="date" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Comment</label>
+                                    <textarea id="comment" rows="3" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500"></textarea>
+                                    <div class="text-right text-xs text-gray-400 mt-1"><span id="commentCount">0</span> characters</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Member Category</label>
+                                    <select id="memberCategory" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 bg-white">
+                                        <option value="">Select Category</option>
+                                        <option value="Floor Member">Floor Member</option>
+                                        <option value="Pastor">Pastor</option>
+                                        <option value="Choir">Choir</option>
+                                        <option value="Minister">Minister</option>
+                                        <option value="Teacher">Teacher</option>
+                                        <option value="Protocol">Protocol</option>
+                                        <option value="Sanitation">Sanitation</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Technical">Technical</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 shadow-md">
+                                <i class="fa-regular fa-save"></i> Add Member
+                            </button>
+                        </form>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
-                        <input type="tel" id="phone" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
-                        <input type="text" id="address" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                        <input type="email" id="email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
-                        <input type="date" id="date" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                   <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-1">Comment</label>
-    <textarea id="comment" rows="3" required class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500"></textarea>
-    <div class="text-right text-xs text-gray-400 mt-1"><span id="commentCount">0</span> characters</div>
-</div>
-
-<!-- 👇 NEW DROPDOWN AFTER COMMENT -->
-<div>
-    <label class="block text-sm font-semibold text-gray-700 mb-1">Member Category</label>
-    <select id="memberCategory" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 bg-white">
-        <option value="">Select Category</option>
-        <option value="Member">Floor Member</option>
-        <option value="Visitor">Pastor</option>
-        <option value="First Timer">Choir</option>
-        <option value="Regular">Minister</option>
-        <option value="Irregular">Teacher</option>
-        <option value="Youth">Protocol</option>
-        <option value="Elder">Sanitation</option>
-        <option value="Married">Media</option>
-        <option value="Single">Technical</option>
-    </select>
-</div>
                 </div>
-                <button type="submit" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 shadow-md">
-                    <i class="fa-regular fa-save"></i> Add Member
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
+            </div>
 
             <!-- RIGHT: Scrollable Excel-style Table -->
             <div class="lg:col-span-8">
@@ -215,23 +174,22 @@
                 </div>
                 <div class="table-container" style="max-height: 70vh; overflow: auto; border-radius: 1rem; border: 1px solid #e5e7eb; background: white;">
                     <table class="excel-table">
-            <thead>
-                 <tr>
-                 <th class="px-6 py-4 text-center">
-                 <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
-                 </th>
-                 <th onclick="sortTable('name')" style="cursor: pointer;">NAME <i class="fa-solid fa-sort ml-1"></i></th>
-                 <th onclick="sortTable('phone')" style="cursor: pointer;">PHONE <i class="fa-solid fa-sort ml-1"></i></th>
-                 <th onclick="sortTable('address')" style="cursor: pointer;">ADDRESS <i class="fa-solid fa-sort ml-1"></i></th>
-                 <th onclick="sortTable('email')" style="cursor: pointer;">EMAIL <i class="fa-solid fa-sort ml-1"></i></th>
-                 <th onclick="sortTable('date')" style="cursor: pointer;">DATE <i class="fa-solid fa-sort ml-1"></i></th>
-                <th onclick="sortTable('comment')" style="cursor: pointer;">COMMENT <i class="fa-solid fa-sort ml-1"></i></th>
-                <th onclick="sortTable('memberCategory')" style="cursor: pointer;">CATEGORY <i class="fa-solid fa-sort ml-1"></i></th>
-                <th>ACTIONS</th>
-                </tr>
-          </thead>
-                        <tbody id="memberTable">
-                        </tbody>
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-4 text-center">
+                                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                                </th>
+                                <th onclick="sortTable('name')" style="cursor: pointer;">NAME <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('phone')" style="cursor: pointer;">PHONE <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('address')" style="cursor: pointer;">ADDRESS <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('email')" style="cursor: pointer;">EMAIL <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('date')" style="cursor: pointer;">DATE <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('comment')" style="cursor: pointer;">COMMENT <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th onclick="sortTable('memberCategory')" style="cursor: pointer;">CATEGORY <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTable"></tbody>
                     </table>
                 </div>
             </div>
@@ -250,29 +208,28 @@
     </div>
 
     <!-- Bulk SMS Modal -->
-<div id="bulkSmsModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop transition-all">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full mx-4 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-comment-sms text-purple-600"></i> Bulk SMS</h3>
-            <button onclick="closeBulkSmsModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+    <div id="bulkSmsModal" class="hidden fixed inset-0 z-50 items-center justify-center modal-backdrop transition-all">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full mx-4 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-comment-sms text-purple-600"></i> Bulk SMS</h3>
+                <button onclick="closeBulkSmsModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">Send a message to <span id="selectedCount">0</span> selected members.</p>
+            <textarea id="bulkSmsMessage" rows="4" class="w-full border rounded-xl p-3 mb-2" placeholder="Type your message..."></textarea>
+            <div class="text-right text-sm text-gray-500 mb-3"><span id="bulkCharCount">0</span> / 160 characters</div>
+            <div class="flex gap-3">
+                <button onclick="sendBulkSms()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl">Send SMS</button>
+                <button onclick="closeBulkSmsModal()" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
+            </div>
+            <div id="bulkSmsResult" class="mt-3 text-sm hidden"></div>
         </div>
-        <p class="text-sm text-gray-500 mb-3">Send a message to <span id="selectedCount">0</span> selected members.</p>
-        <textarea id="bulkSmsMessage" rows="4" class="w-full border rounded-xl p-3 mb-2" placeholder="Type your message..."></textarea>
-        <div class="text-right text-sm text-gray-500 mb-3"><span id="bulkCharCount">0</span> / 160 characters</div>
-        <div class="flex gap-3">
-            <button onclick="sendBulkSms()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-xl">Send SMS</button>
-            <button onclick="closeBulkSmsModal()" class="flex-1 border border-gray-300 py-2 rounded-xl">Cancel</button>
-        </div>
-        <div id="bulkSmsResult" class="mt-3 text-sm hidden"></div>
     </div>
-</div>
 
     <script>
         const API_URL = '/api/users';
         let allMembers = [];
         let currentSort = { field: 'name', direction: 'asc' };
 
-        // Toast helper
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -282,7 +239,6 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Dark mode
         function toggleDarkMode() {
             const html = document.documentElement;
             const btn = document.getElementById('darkModeToggle');
@@ -291,6 +247,7 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
         }
+
         function initTheme() {
             const html = document.documentElement;
             const btn = document.getElementById('darkModeToggle');
@@ -304,12 +261,10 @@
             }
         }
 
-        // Character counter
         const commentInput = document.getElementById('comment');
         const commentCount = document.getElementById('commentCount');
         commentInput.addEventListener('input', () => commentCount.innerText = commentInput.value.length);
 
-        // Load members
         async function loadMembers() {
             try {
                 const res = await axios.get(API_URL);
@@ -327,7 +282,6 @@
                 m.phone.toLowerCase().includes(searchTerm) ||
                 m.email.toLowerCase().includes(searchTerm)
             );
-            // Sort
             filtered.sort((a, b) => {
                 let aVal = a[currentSort.field] || '';
                 let bVal = b[currentSort.field] || '';
@@ -344,37 +298,37 @@
         }
 
         function renderTable(members) {
-    const tbody = document.getElementById('memberTable');
-    const canEdit = currentUserRole === 'admin' || currentUserRole === 'secretary';
-    const canDelete = currentUserRole === 'admin';
-    const canEmail = currentUserRole !== 'viewer';
+            const tbody = document.getElementById('memberTable');
+            const canEdit = currentUserRole === 'admin' || currentUserRole === 'secretary';
+            const canDelete = currentUserRole === 'admin';
+            const canEmail = currentUserRole !== 'viewer';
 
-    if (members.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">No members found</td></tr>`;
-        return;
-    }
+            if (members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-400">No members found</td></tr>`;
+                return;
+            }
 
-    tbody.innerHTML = members.map(m => `
-        <tr>
-            <td class="px-6 py-4 text-center">
-                <input type="checkbox" class="member-checkbox" value="${m._id}" data-phone="${m.phone}">
-            </td>
-            <td>${escapeHtml(m.name)}</td>
-            <td>${escapeHtml(m.phone)}</td>
-            <td>${escapeHtml(m.address || '—')}</td>
-            <td>${escapeHtml(m.email)}</td>
-            <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
-            <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
-            <td>${escapeHtml(m.memberCategory || '—')}</td>
-            <td>
-                ${canEmail ? `<button onclick="emailMember('${m._id}', '${escapeHtml(m.name)}', '${escapeHtml(m.email)}')" class="text-indigo-600 hover:text-indigo-800 mr-2"><i class="fas fa-envelope"></i></button>` : ''}
-                <button onclick="showQR('${m._id}', '${escapeHtml(m.name)}')" class="text-purple-600 hover:text-purple-800 mr-2"><i class="fas fa-qrcode"></i></button>
-                ${canEdit ? `<button onclick="editMember('${m._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete ? `<button onclick="deleteMember('${m._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>` : ''}
-            </td>
-        </tr>
-    `).join('');
-}
+            tbody.innerHTML = members.map(m => `
+                <tr>
+                    <td class="px-6 py-4 text-center">
+                        <input type="checkbox" class="member-checkbox" value="${m._id}" data-phone="${m.phone}">
+                    </td>
+                    <td>${escapeHtml(m.name)}</td>
+                    <td>${escapeHtml(m.phone)}</td>
+                    <td>${escapeHtml(m.address || '—')}</td>
+                    <td>${escapeHtml(m.email)}</td>
+                    <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
+                    <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
+                    <td>${escapeHtml(m.memberCategory || '—')}</td>
+                    <td>
+                        ${canEmail ? `<button onclick="emailMember('${m._id}', '${escapeHtml(m.name)}', '${escapeHtml(m.email)}')" class="text-indigo-600 hover:text-indigo-800 mr-2"><i class="fas fa-envelope"></i></button>` : ''}
+                        <button onclick="showQR('${m._id}', '${escapeHtml(m.name)}')" class="text-purple-600 hover:text-purple-800 mr-2"><i class="fas fa-qrcode"></i></button>
+                        ${canEdit ? `<button onclick="editMember('${m._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>` : ''}
+                        ${canDelete ? `<button onclick="deleteMember('${m._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
 
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) || ''; }
 
@@ -393,7 +347,6 @@
             applyFiltersAndRender();
         }
 
-        // Add member
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = {
@@ -403,7 +356,7 @@
                 email: document.getElementById('email').value.trim(),
                 date: document.getElementById('date').value,
                 comment: document.getElementById('comment').value.trim(),
-                memberCategory: document.getElementById('memberCategory').value 
+                memberCategory: document.getElementById('memberCategory').value
             };
             if (!formData.name || !formData.phone || !formData.email || !formData.date || !formData.comment) {
                 showToast('Please fill all required fields', 'error');
@@ -416,72 +369,78 @@
                 commentCount.innerText = '0';
                 loadMembers();
             } catch (err) {
+                console.error('Add member error:', err);
                 showToast(err.response?.data?.message || 'Failed to add member', 'error');
             }
         });
 
-        // Edit modal
-    async function editMember(id) {
-    try {
-        const res = await axios.get(`${API_URL}/${id}`);
-        const m = res.data;
-        const modal = document.getElementById('editModal');
-        const formHTML = `
-            <input type="hidden" id="edit-id" value="${m._id}">
-            <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(m.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-            <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${escapeHtml(m.phone)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-            <div><label class="text-sm font-semibold">Address</label><input id="edit-address" value="${escapeHtml(m.address)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-            <div><label class="text-sm font-semibold">Email</label><input id="edit-email" value="${escapeHtml(m.email)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-            <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-            <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
-            <div>
-                <label class="text-sm font-semibold">Category</label>
-                <select id="edit-category" class="w-full px-4 py-3 border rounded-2xl mt-1">
-                    <option value="">Select Category</option>
-                    <option value="Floor Member" ${m.memberCategory === 'Floor Member' ? 'selected' : ''}>Floor Member</option>
-                    <option value="Pastor" ${m.memberCategory === 'Pastor' ? 'selected' : ''}>Pastor</option>
-                    <option value="Choir" ${m.memberCategory === 'Choir' ? 'selected' : ''}>Choir</option>
-                    <option value="Minister" ${m.memberCategory === 'Minister' ? 'selected' : ''}>Minister</option>
-                    <option value="Teacher" ${m.memberCategory === 'Teacher' ? 'selected' : ''}>Teacher</option>
-                    <option value="Protocol" ${m.memberCategory === 'Protocol' ? 'selected' : ''}>Protocol</option>
-                    <option value="Sanitation" ${m.memberCategory === 'Sanitation' ? 'selected' : ''}>Sanitation</option>
-                    <option value="Media" ${m.memberCategory === 'Media' ? 'selected' : ''}>Media</option>
-                    <option value="Technical" ${m.memberCategory === 'Technical' ? 'selected' : ''}>Technical</option>
-                </select>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button>
-                <button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button>
-            </div>
-        `;
-        document.getElementById('editForm').innerHTML = formHTML;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    } catch (err) {
-        showToast('Failed to load member data', 'error');
-    }
-}
+        async function editMember(id) {
+            try {
+                const res = await axios.get(`${API_URL}/${id}`);
+                const m = res.data;
+                const modal = document.getElementById('editModal');
+                const formHTML = `
+                    <input type="hidden" id="edit-id" value="${m._id}">
+                    <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(m.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${escapeHtml(m.phone)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Address</label><input id="edit-address" value="${escapeHtml(m.address)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Email</label><input id="edit-email" value="${escapeHtml(m.email)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+                    <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
+                    <div>
+                        <label class="text-sm font-semibold">Category</label>
+                        <select id="edit-category" class="w-full px-4 py-3 border rounded-2xl mt-1">
+                            <option value="">Select Category</option>
+                            <option value="Floor Member" ${m.memberCategory === 'Floor Member' ? 'selected' : ''}>Floor Member</option>
+                            <option value="Pastor" ${m.memberCategory === 'Pastor' ? 'selected' : ''}>Pastor</option>
+                            <option value="Choir" ${m.memberCategory === 'Choir' ? 'selected' : ''}>Choir</option>
+                            <option value="Minister" ${m.memberCategory === 'Minister' ? 'selected' : ''}>Minister</option>
+                            <option value="Teacher" ${m.memberCategory === 'Teacher' ? 'selected' : ''}>Teacher</option>
+                            <option value="Protocol" ${m.memberCategory === 'Protocol' ? 'selected' : ''}>Protocol</option>
+                            <option value="Sanitation" ${m.memberCategory === 'Sanitation' ? 'selected' : ''}>Sanitation</option>
+                            <option value="Media" ${m.memberCategory === 'Media' ? 'selected' : ''}>Media</option>
+                            <option value="Technical" ${m.memberCategory === 'Technical' ? 'selected' : ''}>Technical</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button>
+                        <button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button>
+                    </div>
+                `;
+                document.getElementById('editForm').innerHTML = formHTML;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } catch (err) {
+                showToast('Failed to load member data', 'error');
+            }
+        }
 
-async function saveEdit() {
-    const id = document.getElementById('edit-id').value;
-    const data = {
-        name: document.getElementById('edit-name').value,
-        phone: document.getElementById('edit-phone').value,
-        address: document.getElementById('edit-address').value,
-        email: document.getElementById('edit-email').value,
-        date: document.getElementById('edit-date').value,
-        comment: document.getElementById('edit-comment').value,
-        memberCategory: document.getElementById('edit-category').value  // 👈 Fix: use correct ID
-    };
-    try {
-        await axios.put(`${API_URL}/${id}`, data);
-        showToast('Member updated successfully');
-        closeModal();
-        loadMembers();
-    } catch (err) {
-        showToast('Update failed', 'error');
-    }
-}
+        function closeModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                name: document.getElementById('edit-name').value,
+                phone: document.getElementById('edit-phone').value,
+                address: document.getElementById('edit-address').value,
+                email: document.getElementById('edit-email').value,
+                date: document.getElementById('edit-date').value,
+                comment: document.getElementById('edit-comment').value,
+                memberCategory: document.getElementById('edit-category').value
+            };
+            try {
+                await axios.put(`${API_URL}/${id}`, data);
+                showToast('Member updated successfully');
+                closeModal();
+                loadMembers();
+            } catch (err) {
+                showToast('Update failed', 'error');
+            }
+        }
 
         async function deleteMember(id) {
             if (!confirm('Are you sure you want to delete this member?')) return;
@@ -494,7 +453,6 @@ async function saveEdit() {
             }
         }
 
-        // Export CSV
         function exportToCSV() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             let filtered = allMembers.filter(m => 
@@ -503,8 +461,8 @@ async function saveEdit() {
                 m.email.toLowerCase().includes(searchTerm)
             );
             if (filtered.length === 0) return showToast('No data to export', 'error');
-            const headers = ['Name', 'Phone', 'Address', 'Email', 'Date', 'Comment'];
-            const rows = filtered.map(m => [m.name, m.phone, m.address, m.email, m.date ? dayjs(m.date).format('YYYY-MM-DD') : '', m.comment]);
+            const headers = ['Name', 'Phone', 'Address', 'Email', 'Date', 'Comment', 'Category'];
+            const rows = filtered.map(m => [m.name, m.phone, m.address, m.email, m.date ? dayjs(m.date).format('YYYY-MM-DD') : '', m.comment, m.memberCategory || '']);
             const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
             const blob = new Blob([csv], {type: 'text/csv'});
             const a = document.createElement('a');
@@ -515,118 +473,116 @@ async function saveEdit() {
             showToast('CSV exported');
         }
 
-        // Event listeners
         document.getElementById('searchInput').addEventListener('input', applyFiltersAndRender);
 
         // Bulk SMS functions
-let selectedMemberIds = [];
+        let selectedMemberIds = [];
 
-function toggleAllCheckboxes() {
-    const selectAll = document.getElementById('selectAll');
-    document.querySelectorAll('.member-checkbox').forEach(cb => {
-        cb.checked = selectAll.checked;
-    });
-    updateSelectedCount();
-}
-
-function updateSelectedCount() {
-    const checkboxes = document.querySelectorAll('.member-checkbox:checked');
-    selectedMemberIds = Array.from(checkboxes).map(cb => cb.value);
-    document.getElementById('selectedCount').innerText = selectedMemberIds.length;
-}
-
-// Attach to each checkbox change event (you can add via event delegation)
-document.addEventListener('change', (e) => {
-    if (e.target.classList.contains('member-checkbox')) {
-        updateSelectedCount();
-        // Uncheck "select all" if any unchecked
-        const all = document.querySelectorAll('.member-checkbox');
-        const checked = document.querySelectorAll('.member-checkbox:checked');
-        document.getElementById('selectAll').checked = all.length === checked.length;
-    }
-});
-
-function openBulkSmsModal() {
-    const checked = document.querySelectorAll('.member-checkbox:checked');
-    if (checked.length === 0) {
-        showToast('Please select at least one member', 'error');
-        return;
-    }
-    document.getElementById('selectedCount').innerText = checked.length;
-    document.getElementById('bulkSmsMessage').value = '';
-    document.getElementById('bulkCharCount').innerText = '0';
-    document.getElementById('bulkSmsResult').classList.add('hidden');
-    document.getElementById('bulkSmsModal').classList.remove('hidden');
-    document.getElementById('bulkSmsModal').classList.add('flex');
-}
-
-function closeBulkSmsModal() {
-    document.getElementById('bulkSmsModal').classList.add('hidden');
-    document.getElementById('bulkSmsModal').classList.remove('flex');
-}
-
-// Character counter for bulk SMS
-document.getElementById('bulkSmsMessage').addEventListener('input', function() {
-    const len = this.value.length;
-    document.getElementById('bulkCharCount').innerText = len;
-    if (len > 160) {
-        this.value = this.value.substring(0, 160);
-        document.getElementById('bulkCharCount').innerText = 160;
-        showToast('Message limited to 160 characters', 'error');
-    }
-});
-
-async function sendBulkSms() {
-    const message = document.getElementById('bulkSmsMessage').value.trim();
-    if (!message) {
-        showToast('Please enter a message', 'error');
-        return;
-    }
-
-    const checked = document.querySelectorAll('.member-checkbox:checked');
-    const phoneNumbers = Array.from(checked).map(cb => cb.dataset.phone).filter(p => p);
-    if (phoneNumbers.length === 0) {
-        showToast('No valid phone numbers selected', 'error');
-        return;
-    }
-
-    const resultDiv = document.getElementById('bulkSmsResult');
-    resultDiv.classList.remove('hidden');
-    resultDiv.innerHTML = '<div class="text-center text-gray-500">Sending messages... please wait.</div>';
-
-    try {
-        const res = await axios.post('/api/bulk-sms', { phoneNumbers, message });
-        console.log('📬 Full response:', res); // Debug: see what we got
-
-        if (!res.data || typeof res.data !== 'object') {
-            throw new Error('Invalid response from server');
+        function toggleAllCheckboxes() {
+            const selectAll = document.getElementById('selectAll');
+            document.querySelectorAll('.member-checkbox').forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updateSelectedCount();
         }
 
-        const { summary, details } = res.data;
-        const successCount = summary?.success || 0;
-        const failureCount = summary?.failure || 0;
-        const total = summary?.total || phoneNumbers.length;
-
-        let resultHtml = `<div class="mt-2">
-            <p><strong>Sent:</strong> ${successCount} / ${total}</p>
-            <p><strong>Failed:</strong> ${failureCount}</p>
-        </div>`;
-        if (failureCount > 0) {
-            resultHtml += `<div class="mt-2 text-xs text-red-500"><ul>${details.filter(d => !d.success).map(d => `<li>${d.phone}: ${d.error}</li>`).join('')}</ul></div>`;
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+            selectedMemberIds = Array.from(checkboxes).map(cb => cb.value);
+            document.getElementById('selectedCount').innerText = selectedMemberIds.length;
         }
-        resultDiv.innerHTML = resultHtml;
-        showToast(`Bulk SMS sent: ${successCount} successful, ${failureCount} failed`);
-        // Uncheck all after sending
-        document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = false);
-        document.getElementById('selectAll').checked = false;
-        updateSelectedCount();
-    } catch (err) {
-        console.error('🔥 Bulk SMS error:', err);
-        const errorMsg = err.response?.data?.message || err.message || 'Unknown error';
-        resultDiv.innerHTML = `<div class="text-red-500">Error: ${errorMsg}</div>`;
-        showToast('Bulk SMS failed: ' + errorMsg, 'error');
-    }
-}
+
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('member-checkbox')) {
+                updateSelectedCount();
+                const all = document.querySelectorAll('.member-checkbox');
+                const checked = document.querySelectorAll('.member-checkbox:checked');
+                document.getElementById('selectAll').checked = all.length === checked.length;
+            }
+        });
+
+        function openBulkSmsModal() {
+            const checked = document.querySelectorAll('.member-checkbox:checked');
+            if (checked.length === 0) {
+                showToast('Please select at least one member', 'error');
+                return;
+            }
+            document.getElementById('selectedCount').innerText = checked.length;
+            document.getElementById('bulkSmsMessage').value = '';
+            document.getElementById('bulkCharCount').innerText = '0';
+            document.getElementById('bulkSmsResult').classList.add('hidden');
+            document.getElementById('bulkSmsModal').classList.remove('hidden');
+            document.getElementById('bulkSmsModal').classList.add('flex');
+        }
+
+        function closeBulkSmsModal() {
+            document.getElementById('bulkSmsModal').classList.add('hidden');
+            document.getElementById('bulkSmsModal').classList.remove('flex');
+        }
+
+        document.getElementById('bulkSmsMessage').addEventListener('input', function() {
+            const len = this.value.length;
+            document.getElementById('bulkCharCount').innerText = len;
+            if (len > 160) {
+                this.value = this.value.substring(0, 160);
+                document.getElementById('bulkCharCount').innerText = 160;
+                showToast('Message limited to 160 characters', 'error');
+            }
+        });
+
+        async function sendBulkSms() {
+            const message = document.getElementById('bulkSmsMessage').value.trim();
+            if (!message) {
+                showToast('Please enter a message', 'error');
+                return;
+            }
+
+            const checked = document.querySelectorAll('.member-checkbox:checked');
+            const phoneNumbers = Array.from(checked).map(cb => cb.dataset.phone).filter(p => p);
+            if (phoneNumbers.length === 0) {
+                showToast('No valid phone numbers selected', 'error');
+                return;
+            }
+
+            const resultDiv = document.getElementById('bulkSmsResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="text-center text-gray-500">Sending messages... please wait.</div>';
+
+            try {
+                const res = await axios.post('/api/bulk-sms', { phoneNumbers, message });
+                if (!res.data || typeof res.data !== 'object') {
+                    throw new Error('Invalid response from server');
+                }
+                const { summary, details } = res.data;
+                const successCount = summary?.success || 0;
+                const failureCount = summary?.failure || 0;
+                const total = summary?.total || phoneNumbers.length;
+
+                let resultHtml = `<div class="mt-2">
+                    <p><strong>Sent:</strong> ${successCount} / ${total}</p>
+                    <p><strong>Failed:</strong> ${failureCount}</p>
+                </div>`;
+                if (failureCount > 0) {
+                    resultHtml += `<div class="mt-2 text-xs text-red-500"><ul>${details.filter(d => !d.success).map(d => `<li>${d.phone}: ${d.error}</li>`).join('')}</ul></div>`;
+                }
+                resultDiv.innerHTML = resultHtml;
+                showToast(`Bulk SMS sent: ${successCount} successful, ${failureCount} failed`);
+                document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('selectAll').checked = false;
+                updateSelectedCount();
+            } catch (err) {
+                console.error('🔥 Bulk SMS error:', err);
+                const errorMsg = err.response?.data?.message || err.message || 'Unknown error';
+                resultDiv.innerHTML = `<div class="text-red-500">Error: ${errorMsg}</div>`;
+                showToast('Bulk SMS failed: ' + errorMsg, 'error');
+            }
+        }
+
+        // Initialize
+        window.onload = () => {
+            initTheme();
+            loadMembers();
+        };
     </script>
 </body>
 </html>
