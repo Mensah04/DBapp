@@ -180,15 +180,15 @@
     <label class="block text-sm font-semibold text-gray-700 mb-1">Member Category</label>
     <select id="memberCategory" class="w-full px-4 py-2.5 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 bg-white">
         <option value="">Select Category</option>
-        <option value="Member">Member</option>
-        <option value="Visitor">Visitor</option>
-        <option value="First Timer">First Timer</option>
-        <option value="Regular">Regular</option>
-        <option value="Irregular">Irregular</option>
-        <option value="Youth">Youth</option>
-        <option value="Elder">Elder</option>
-        <option value="Married">Married</option>
-        <option value="Single">Single</option>
+        <option value="Member">Floor Member</option>
+        <option value="Visitor">Pastor</option>
+        <option value="First Timer">Choir</option>
+        <option value="Regular">Minister</option>
+        <option value="Irregular">Teacher</option>
+        <option value="Youth">Protocol</option>
+        <option value="Elder">Sanitation</option>
+        <option value="Married">Media</option>
+        <option value="Single">Audio Visual</option>
     </select>
 </div>
                 </div>
@@ -226,6 +226,7 @@
                  <th onclick="sortTable('email')" style="cursor: pointer;">EMAIL <i class="fa-solid fa-sort ml-1"></i></th>
                  <th onclick="sortTable('date')" style="cursor: pointer;">DATE <i class="fa-solid fa-sort ml-1"></i></th>
                 <th onclick="sortTable('comment')" style="cursor: pointer;">COMMENT <i class="fa-solid fa-sort ml-1"></i></th>
+                <th onclick="sortTable('memberCategory')" style="cursor: pointer;">CATEGORY <i class="fa-solid fa-sort ml-1"></i></th>
                 <th>ACTIONS</th>
                 </tr>
           </thead>
@@ -364,6 +365,7 @@
             <td>${escapeHtml(m.email)}</td>
             <td>${m.date ? dayjs(m.date).format('MMM D, YYYY') : '—'}</td>
             <td>${escapeHtml(m.comment?.substring(0, 60) || '—')}</td>
+            <td>${escapeHtml(m.memberCategory || '—')}</td>
             <td>
                 ${canEmail ? `<button onclick="emailMember('${m._id}', '${escapeHtml(m.name)}', '${escapeHtml(m.email)}')" class="text-indigo-600 hover:text-indigo-800 mr-2"><i class="fas fa-envelope"></i></button>` : ''}
                 <button onclick="showQR('${m._id}', '${escapeHtml(m.name)}')" class="text-purple-600 hover:text-purple-800 mr-2"><i class="fas fa-qrcode"></i></button>
@@ -400,7 +402,8 @@
                 address: document.getElementById('address').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 date: document.getElementById('date').value,
-                comment: document.getElementById('comment').value.trim()
+                comment: document.getElementById('comment').value.trim(),
+                memberCategory: document.getElementById('memberCategory').value 
             };
             if (!formData.name || !formData.phone || !formData.email || !formData.date || !formData.comment) {
                 showToast('Please fill all required fields', 'error');
@@ -432,6 +435,21 @@
                     <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
                     <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
                     <div class="flex gap-3 mt-6"><button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button><button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button></div>
+                    <div><label class="text-sm font-semibold">Category</label
+                    
+    <select id="edit-category" class="w-full px-4 py-3 border rounded-2xl mt-1">
+        <option value="">Select Category</option>
+        <option value="Floor Member" ${m.memberCategory === 'Floor Member' ? 'selected' : ''}>Member</option>
+        <option value="Pastor" ${m.memberCategory === 'Pastor' ? 'selected' : ''}>Pastor</option>
+        <option value="Choir" ${m.memberCategory === 'Choir' ? 'selected' : ''}>Choir</option>
+        <option value="Minister" ${m.memberCategory === 'Minister' ? 'selected' : ''}>Minister</option>
+        <option value="Teacher" ${m.memberCategory === 'Teacher' ? 'selected' : ''}>Teacher</option>
+        <option value="Protocol" ${m.memberCategory === 'Protocol' ? 'selected' : ''}>Protocol</option>
+        <option value="Sanitation" ${m.memberCategory === 'Sanitation' ? 'selected' : ''}>Sanitation</option>
+        <option value="Midia" ${m.memberCategory === 'Midia' ? 'selected' : ''}>Midia</option>
+        <option value="Audio Visual" ${m.memberCategory === 'SiAudio Visualngle' ? 'selected' : ''}>Audio Visual</option>
+    </select>
+</div>
                 `;
                 document.getElementById('editForm').innerHTML = formHTML;
                 modal.classList.remove('hidden');
@@ -455,7 +473,7 @@
                 address: document.getElementById('edit-address').value,
                 email: document.getElementById('edit-email').value,
                 date: document.getElementById('edit-date').value,
-                comment: document.getElementById('edit-comment').value
+                Category: document.getElementById('edit-Category').value
             };
             try {
                 await axios.put(`${API_URL}/${id}`, data);
