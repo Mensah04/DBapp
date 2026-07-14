@@ -391,10 +391,10 @@ app.post('/api/users', isAuthenticated, authorize('admin', 'secretary'), async (
     res.status(201).json(newUser);
 });
 app.put('/api/users/:id', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => {
-    const { name, phone, address, email, date, comment } = req.body;
+    const { name, phone, address, email, date, comment, memberCategory } = req.body;
     const updated = await User.findByIdAndUpdate(
         req.params.id,
-        { name, phone, address, email, date, comment },
+        { name, phone, address, email, date, comment, memberCategory },
         { new: true, runValidators: true }
     );
     if (!updated) return res.status(404).json({ message: 'Member not found' });
