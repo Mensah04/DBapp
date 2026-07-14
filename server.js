@@ -70,7 +70,7 @@ const userSchema = new mongoose.Schema({
     address: String,
     email: String,
     date: String,
-    comment: String
+    comment: String,
     memberCategory: { type: String, default: '' }
 });
 const followUpSchema = new mongoose.Schema({
