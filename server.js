@@ -159,30 +159,6 @@ const Message = mongoose.model('Message', messageSchema);
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
 // ==================== HELPER FUNCTIONS ====================
-function formatPhoneForTwilio(phone) {
-    if (!phone) return null;
-    let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('0')) cleaned = '233' + cleaned.substring(1);
-    if (!cleaned.startsWith('+')) cleaned = '+' + cleaned;
-    return cleaned.length === 13 ? cleaned : null;
-}
-
-async function sendSms(phoneNumber, message) {
-    if (!phoneNumber) return { success: false, error: 'No phone number' };
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    try {
-        const result = await client.messages.create({
-            body: message,
-            from: process.env.TWILIO_PHONE_NUMBER,
-            to: phoneNumber
-        });
-        console.log('📲 Twilio response:', result.status, result.sid);
-        return { success: true, sid: result.sid, status: result.status };
-    } catch (error) {
-        console.error('Twilio SMS error:', error);
-        return { success: false, error: error.message };
-    }
-}
 
 function isAuthenticated(req, res, next) {
     if (req.session.userId) {
