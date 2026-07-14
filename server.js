@@ -502,15 +502,667 @@ app.delete('/api/followups/:id', isAuthenticated, authorize('admin'), async (req
     res.json({ message: 'Deleted' });
 });
 
+// ==================== DASHBOARD STATS ====================
+app.get('/api/dashboard-stats', async (req, res) => {
+    try {
+        const { range = '30', status } = req.query;
+
+        let query = {};
+        if (status) {
+            query.status = status;
+        }
+
+        const followUps = await FollowUp.find(query).lean();
+
+        const now = new Date();
+        let cutoff = new Date();
+
+        if (range === '7') cutoff.setDate(now.getDate() - 7);
+        else if (range === '30') cutoff.setDate(now.getDate() - 30);
+        else if (range === '90') cutoff.setDate(now.getDate() - 90);
+        else if (range === 'all') cutoff = new Date(0);
+
+        const filteredFollowUps = followUps.filter(fu => {
+            if (!fu.dateFollowedUp) return range === 'all';
+            return new Date(fu.dateFollowedUp) >= cutoff;
+        });
+
+        const statusBreakdown = {
+            Regular: 0,
+            Irregular: 0,
+            Visitor: 0,
+            'First Timer': 0,
+            total: filteredFollowUps.length
+        };
+
+        filteredFollowUps.forEach(fu => {
+            const st = fu.status?.trim();
+            if (st && statusBreakdown.hasOwnProperty(st)) {
+                statusBreakdown[st]++;
+            } else if (st) {
+                statusBreakdown.Irregular++;
+            }
+        });
+
+        const overdue = filteredFollowUps.filter(fu => {
+            if (!fu.dateFollowedUp) return true;
+            return new Date(fu.dateFollowedUp) < new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        }).length;
+
+        const newVisitors = filteredFollowUps.filter(fu => {
+            return ['Visitor', 'First Timer'].includes(fu.status) &&
+                   new Date(fu.dateFollowedUp || fu.createdAt || now) >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        }).length;
+
+        const trend = getFollowUpTrend(filteredFollowUps, 30);
+
+        res.json({
+            global: {
+                totalFollowUps: statusBreakdown.total,
+                regular: statusBreakdown.Regular,
+                irregular: statusBreakdown.Irregular,
+                newVisitors: newVisitors,
+                overdue: overdue
+            },
+            statusBreakdown,
+            trend: trend,
+            users: filteredFollowUps.slice(0, 30)
+        });
+
+    } catch (error) {
+        console.error("Dashboard stats error:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Helper function (already exists, but ensure it's defined)
+function getFollowUpTrend(followUps, days = 30) {
+    const trend = {};
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        trend[date.toISOString().split('T')[0]] = 0;
+    }
+    followUps.forEach(fu => {
+        if (fu.dateFollowedUp) {
+            const dateStr = new Date(fu.dateFollowedUp).toISOString().split('T')[0];
+            if (trend[dateStr] !== undefined) trend[dateStr]++;
+        }
+    });
+    return Object.keys(trend).map(date => ({ date, count: trend[date] }));
+}
+
+app.post('/api/attendance', async (req, res) => {
+    console.log('POST /api/attendance:', req.body);
+    try {
+let { name, phone, date, serviceType, category, gender, notes } = req.body;
+        let normalizedPhone = null;
+        if (phone && typeof phone === 'string') {
+            // Remove all non-digits
+            normalizedPhone = phone.replace(/\D/g, '');
+
+            // Handle common Ghana formats: 0xxxxxxxxx → +233xxxxxxxxx
+            if (normalizedPhone.startsWith('0') && normalizedPhone.length === 10) {
+                normalizedPhone = '233' + normalizedPhone.substring(1);
+            }
+            // Add + prefix if not present
+            if (!normalizedPhone.startsWith('+')) {
+                normalizedPhone = '+' + normalizedPhone;
+            }
+
+            // Optional: enforce length for Ghana numbers
+            if (normalizedPhone.length !== 13) { // +233xxxxxxxxx = 13 chars
+                return res.status(400).json({ message: 'Invalid phone number format' });
+            }
+        }
+
+        // ── Duplicate check with normalized phone ──
+        if (normalizedPhone) {
+            const checkDate = new Date(date);
+            checkDate.setHours(0, 0, 0, 0);
+            const nextDay = new Date(checkDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const existing = await Attendance.findOne({
+                phone: normalizedPhone,
+                date: { $gte: checkDate, $lt: nextDay },
+                serviceType
+            });
+
+            if (existing) {
+                return res.status(409).json({ 
+                    message: `This phone number (${normalizedPhone}) has already been checked in for ${serviceType} today.`,
+                    existingRecord: {
+                        _id: existing._id,
+                        name: existing.name,
+                        checkInTime: existing.checkedInTime
+                    }
+                });
+            }
+        }
+
+        // Save with normalized phone
+        const attendanceData = {
+            name,
+            category,
+            gender,                   
+            phone: normalizedPhone,
+            date,
+            serviceType,
+            notes: notes || ''         
+        };
+        const attendance = new Attendance(attendanceData);
+        await attendance.save();
+        res.status(201).json(attendance);
+
+    } catch (error) {
+    console.error('Attendance creation error:', error);
+
+    if (error.code === 11000) {
+        return res.status(409).json({
+            success: false,
+            message: `Phone ${req.body.phone || '(unknown)'} has already been checked in today for ${req.body.serviceType || 'this service'}.`,
+            errorType: 'duplicate_checkin',
+        });
+    }
+
+    // ← All other errors go here
+    res.status(400).json({
+        success: false,
+        message: error.message || 'Check-in failed',
+        details: error.errors 
+            ? Object.keys(error.errors).map(k => ({
+                field: k,
+                reason: error.errors[k].message
+              }))
+            : null
+    });
+}
+});
+app.get('/api/attendance', async (req, res) => {
+    console.log('GET /api/attendance - Query:', req.query);
+    try {
+        const { 
+            category, 
+            date, 
+            startDate, 
+            endDate, 
+            serviceType,
+            checkedIn,
+            page = 1, 
+            limit = 50 
+        } = req.query;
+
+        const query = {};
+        
+        if (category) query.category = category;
+        if (serviceType) query.serviceType = serviceType;
+        if (checkedIn !== undefined) query.checkedIn = checkedIn === 'true';
+        
+        // Date filtering
+        if (date) {
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+            query.date = { $gte: startOfDay, $lte: endOfDay };
+        } else if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.date.$lte = end;
+            }
+        }
+
+        const skip = (page - 1) * limit;
+        
+        const attendance = await Attendance.find(query)
+            .sort({ date: -1, checkedInTime: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+        
+        const total = await Attendance.countDocuments(query);
+        
+        res.json({
+            attendance,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching attendance:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.get('/api/attendance/stats', async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const todayRecords = await Attendance.find({ date: { $gte: today, $lt: tomorrow } });
+        
+        const byCategory = { Children: 0, Youth: 0, Married: 0, Single: 0, Elder: 0 };
+        const byGender = { Male: 0, Female: 0 };
+
+        todayRecords.forEach(record => {
+            if (record.category) byCategory[record.category] = (byCategory[record.category] || 0) + 1;
+            if (record.gender) byGender[record.gender] = (byGender[record.gender] || 0) + 1;
+        });
+
+        res.json({
+            today: {
+                total: todayRecords.length,
+                byCategory,
+                byGender
+            }
+        });
+    } catch (error) {
+        console.error('Stats error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.get('/api/attendance/:id', async (req, res) => {
+    console.log('GET /api/attendance/:id - ID:', req.params.id);
+    try {
+        const record = await Attendance.findById(req.params.id);
+        if (!record) {
+            return res.status(404).json({ message: 'Attendance record not found' });
+        }
+        res.json(record);
+    } catch (error) {
+        console.error('Error fetching attendance record:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Update attendance record (full update or checkout)
+app.put('/api/attendance/:id', async (req, res) => {
+    console.log('PUT /api/attendance/:id - ID:', req.params.id, 'Body:', req.body);
+    try {
+        const { id } = req.params;
+        const { checkedOut, name, category, gender, phone, serviceType, date, notes } = req.body;
+
+        let updateData = {};
+
+        // If it's a checkout action
+        if (checkedOut === true) {
+            updateData = {
+                checkedIn: false,
+                checkedOutTime: new Date()
+            };
+        } 
+        // If it's a full edit (all fields provided)
+        else if (name && category && gender && serviceType && date) {
+            updateData = {
+                name,
+                category,
+                gender,
+                phone: phone || '',
+                serviceType,
+                date: new Date(date),
+                notes: notes || '',
+                // preserve existing check-in status unless explicitly changed
+                checkedIn: req.body.checkedIn !== undefined ? req.body.checkedIn : true
+            };
+        } 
+        else {
+            return res.status(400).json({ message: 'Invalid update data' });
+        }
+
+        const updated = await Attendance.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        if (!updated) {
+            return res.status(404).json({ message: 'Attendance record not found' });
+        }
+        res.json(updated);
+    } catch (error) {
+        console.error('Error updating attendance:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Delete attendance record
+app.delete('/api/attendance/:id', async (req, res) => {
+    console.log('DELETE /api/attendance/:id - ID:', req.params.id);
+    try {
+        const attendance = await Attendance.findByIdAndDelete(req.params.id);
+        if (!attendance) {
+            return res.status(404).json({ message: 'Attendance record not found' });
+        }
+        res.json({ message: 'Attendance record deleted' });
+    } catch (error) {
+        console.error('Error deleting attendance:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.get('/api/attendance/export/:type', async (req, res) => {
+    try {
+        const { type } = req.params;
+        const { startDate, endDate, category } = req.query;
+        
+        const query = {};
+        if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.date.$lte = end;
+            }
+        }
+        if (category) query.category = category;
+
+        const attendance = await Attendance.find(query)
+            .sort({ date: -1, category: 1 });
+
+        if (type === 'csv') {
+            // Updated: force phone as quoted string so Excel treats it as text
+            const csvData = attendance.map(record => ({
+                Name: record.name || '',
+                Category: record.category || '',
+                Gender: record.gender || '',
+                Phone: record.phone ? `"${record.phone}"` : '',          // ← key fix: quotes around phone
+                Service: record.serviceType || '',
+                Date: record.date ? record.date.toISOString().split('T')[0] : '',
+                'Check-in Time': record.checkedInTime 
+                    ? record.checkedInTime.toLocaleString() 
+                    : '',
+                'Check-out Time': record.checkedOutTime 
+                    ? record.checkedOutTime.toLocaleString() 
+                    : 'Still checked in',
+                Status: record.checkedIn ? 'Checked In' : 'Checked Out',
+                Notes: record.notes || ''
+            }));
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename=attendance.csv');
+            
+            // Convert to CSV
+            const csv = convertToCSV(csvData);
+            res.send(csv);
+        } else {
+            res.json(attendance);
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Helper function for CSV conversion (unchanged)
+function convertToCSV(data) {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+        headers.join(','), // Header row
+        ...data.map(row => 
+            headers.map(header => {
+                const value = row[header];
+                // Escape quotes and wrap in quotes if contains comma or is already quoted
+                const escaped = String(value).replace(/"/g, '""');
+                return escaped.includes(',') || escaped.startsWith('"') 
+                    ? `"${escaped}"` 
+                    : escaped;
+            }).join(',')
+        )
+    ];
+    
+    return csvRows.join('\n');
+}
+
+app.post('/send-message', async (req, res) => {
+    const { name, phone, message: customMessage } = req.body;
+
+    if (!name || !phone) {
+        return res.status(400).json({ success: false, message: "Name and phone number are required" });
+    }
+
+    // Clean phone number (remove spaces, dashes, etc.)
+    const formattedPhone = phone.replace(/\D/g, '');
+    
+    // Ensure it starts with '+' for international format
+    const toPhone = formattedPhone.startsWith('+') ? formattedPhone : `+${formattedPhone}`;
+
+    const smsText = customMessage || `Welcome to RCCG Tabernacle Of Praise, ${name}. We are glad you are here!`;
+
+    try {
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        
+        const message = await client.messages.create({
+            body: smsText,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: toPhone
+        });
+        
+        // Optional: save to database
+        await Message.create({ name, phone: formattedPhone, message: smsText });
+        
+        res.json({ success: true, message: "SMS sent successfully", messageSid: message.sid });
+    } catch (error) {
+        console.error("Twilio SMS error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+function formatPhoneForTwilio(phone) {
+    if (!phone) return null;
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) cleaned = '233' + cleaned.substring(1);
+    if (!cleaned.startsWith('+')) cleaned = '+' + cleaned;
+    return cleaned.length === 13 ? cleaned : null;
+}
+
+async function sendSms(phoneNumber, message) {
+    if (!phoneNumber) return { success: false, error: 'No phone number' };
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    try {
+        const result = await client.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phoneNumber
+        });
+        console.log('📲 Twilio response:', result.status, result.sid);
+        return { success: true, sid: result.sid, status: result.status };
+    } catch (error) {
+        console.error('Twilio SMS error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+app.post('/api/send-email', isAuthenticated, async (req, res) => {
+    const { to, subject, message, memberName, template } = req.body;
+    if (!to) return res.status(400).json({ success: false, message: 'Recipient email is required' });
+
+    let html = '';
+    if (template === 'welcome' && memberName) {
+        html = welcomeEmail(memberName);
+    } else if (template === 'followup' && memberName && message) {
+        html = followUpReminder(memberName, message);
+    } else {
+        html = `<p>${message || 'No additional message.'}</p>`;
+    }
+
+    const result = await sendEmail(to, subject || 'Message from RCCG TOP', html);
+    if (result.success) {
+        res.json({ success: true, message: 'Email sent successfully' });
+    } else {
+        res.status(500).json({ success: false, message: result.error });
+    }
+});
+
+app.get('/api/debug-model', async (req, res) => {
+    try {
+        const modelInfo = {
+            modelName: FollowUp.modelName,
+            collectionName: FollowUp.collection.name,
+            collectionDbName: FollowUp.collection.dbName,
+            collectionNamespace: FollowU.p.collection.namespace
+        };
+        
+        res.json(modelInfo);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Test basic API connectivity
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!', timestamp: new Date() });
+});
+
+// Test database connectivity
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const dbState = mongoose.connection.readyState;
+        const stateMap = {
+            0: 'disconnected',
+            1: 'connected', 
+            2: 'connecting',
+            3: 'disconnecting'
+        };
+        
+        res.json({
+            database: mongoose.connection.db.databaseName,
+            connectionState: `${dbState} (${stateMap[dbState] || 'unknown'})`,
+            collections: await mongoose.connection.db.listCollections().toArray()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Attendance routes
-app.get('/api/attendance', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
-app.get('/api/attendance/stats', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
-app.get('/api/attendance/:id', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
-app.post('/api/attendance', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => { /* ... keep existing logic ... */ });
-app.put('/api/attendance/:id', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => { /* ... keep existing logic ... */ });
-app.delete('/api/attendance/:id', isAuthenticated, authorize('admin'), async (req, res) => { /* ... keep existing logic ... */ });
-app.get('/api/attendance/search/:query', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
-app.get('/api/attendance/export/:type', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
+//app.get('/api/attendance', isAuthenticated, async (req, res) => { / });
+//app.get('/api/attendance/stats', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
+//app.get('/api/attendance/:id', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
+//app.post('/api/attendance', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => { /* ... keep existing logic ... */ });
+//app.put('/api/attendance/:id', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => { /* ... keep existing logic ... */ });
+//app.delete('/api/attendance/:id', isAuthenticated, authorize('admin'), async (req, res) => { /* ... keep existing logic ... */ });
+//app.get('/api/attendance/search/:query', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
+//app.get('/api/attendance/export/:type', isAuthenticated, async (req, res) => { /* ... keep existing logic ... */ });
+
+app.get('/index.html', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/followup.html', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'followup.html'));
+});
+
+app.get('/attendance.html', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'attendance.html'));
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login.html');
+    });
+});
+
+app.get('/protected', isAuthenticated, (_req, res) => {
+    res.send('Protected content');
+});
+
+app.get('/dashboard', isAuthenticated, (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+app.get('/api/get-email-by-name', isAuthenticated, async (req, res) => {
+    const { name } = req.query;
+    const user = await User.findOne({ name: new RegExp('^' + name + '$', 'i') });
+    res.json({ email: user ? user.email : null });
+});
+
+app.get('/api/followups/stats', async (req, res) => {
+    const total = await FollowUp.countDocuments();
+    const regular = await FollowUp.countDocuments({ status: 'Regular' });
+    res.json({ total, regular, irregular: total - regular });
+});
+
+// Test route to debug bulk SMS
+app.get('/api/bulk-sms-test', (req, res) => {
+    res.json({ message: 'Bulk SMS route is reachable!' });
+});
+
+app.post('/api/bulk-sms', isAuthenticated, async (req, res) => {
+    try {
+        console.log('📩 Bulk SMS request received:', req.body);
+        const { phoneNumbers, message } = req.body;
+
+        if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+            console.log('❌ No phone numbers provided');
+            return res.status(400).json({ success: false, message: 'No phone numbers provided' });
+        }
+
+        if (!message || message.trim().length === 0) {
+            console.log('❌ Empty message');
+            return res.status(400).json({ success: false, message: 'Message cannot be empty' });
+        }
+
+        console.log(`📤 Sending bulk SMS to ${phoneNumbers.length} numbers`);
+
+        const results = [];
+        let successCount = 0;
+        let failureCount = 0;
+
+        for (const phone of phoneNumbers) {
+            const formattedPhone = formatPhoneForTwilio(phone);
+            if (!formattedPhone) {
+                console.log(`⚠️ Invalid phone: ${phone}`);
+                results.push({ phone, success: false, error: 'Invalid phone format' });
+                failureCount++;
+                continue;
+            }
+
+            console.log(`📲 Sending to ${formattedPhone}...`);
+            const smsResult = await sendSms(formattedPhone, message);
+            if (smsResult.success) {
+                successCount++;
+                results.push({ phone, success: true, sid: smsResult.sid });
+                console.log(`✅ Sent to ${formattedPhone}`);
+            } else {
+                failureCount++;
+                results.push({ phone, success: false, error: smsResult.error });
+                console.log(`❌ Failed to send to ${formattedPhone}: ${smsResult.error}`);
+            }
+            // Small delay to respect Twilio rate limits
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        const responsePayload = {
+            success: true,
+            summary: { total: phoneNumbers.length, success: successCount, failure: failureCount },
+            details: results
+        };
+        console.log('📤 Sending response:', responsePayload);
+        res.json(responsePayload);
+    } catch (error) {
+        console.error('🔥 Bulk SMS error:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+                                                            
 
 // Other API routes (send-message, send-email, bulk-sms, etc.) – keep as is.
 
