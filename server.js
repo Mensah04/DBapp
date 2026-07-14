@@ -114,15 +114,19 @@ const attendanceSchema = new mongoose.Schema({
         }
     },
     date: {
-        type: Date,
-        required: true,
-        set: function(v) {
-            if (typeof v === 'string') {
-                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v + 'T00:00:00');
-                return new Date(v);
+    type: Date,
+    required: true,
+    set: function(v) {
+        if (typeof v === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                // Create date at midnight local time
+                return new Date(v + 'T00:00:00');
             }
-            return v;
+            return new Date(v);
         }
+        return v;
+    }
+}
     },
     serviceType: {
         type: String,
