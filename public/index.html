@@ -421,69 +421,67 @@
         });
 
         // Edit modal
-        async function editMember(id) {
-            try {
-                const res = await axios.get(`${API_URL}/${id}`);
-                const m = res.data;
-                const modal = document.getElementById('editModal');
-                const formHTML = `
-                    <input type="hidden" id="edit-id" value="${m._id}">
-                    <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(m.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${escapeHtml(m.phone)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Address</label><input id="edit-address" value="${escapeHtml(m.address)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Email</label><input id="edit-email" value="${escapeHtml(m.email)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
-                    <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
-                    <div class="flex gap-3 mt-6"><button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button><button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button></div>
-                    <div><label class="text-sm font-semibold">Category</label
-                    
-    <select id="edit-category" class="w-full px-4 py-3 border rounded-2xl mt-1">
-        <option value="">Select Category</option>
-        <option value="Floor Member" ${m.memberCategory === 'Floor Member' ? 'selected' : ''}>Member</option>
-        <option value="Pastor" ${m.memberCategory === 'Pastor' ? 'selected' : ''}>Pastor</option>
-        <option value="Choir" ${m.memberCategory === 'Choir' ? 'selected' : ''}>Choir</option>
-        <option value="Minister" ${m.memberCategory === 'Minister' ? 'selected' : ''}>Minister</option>
-        <option value="Teacher" ${m.memberCategory === 'Teacher' ? 'selected' : ''}>Teacher</option>
-        <option value="Protocol" ${m.memberCategory === 'Protocol' ? 'selected' : ''}>Protocol</option>
-        <option value="Sanitation" ${m.memberCategory === 'Sanitation' ? 'selected' : ''}>Sanitation</option>
-        <option value="Midia" ${m.memberCategory === 'Midia' ? 'selected' : 'Midia'}>Midia</option>
-        <option value="Technical" ${m.memberCategory === 'Technical' ? 'selected' : 'Technical'}>Technical</option>
-    </select>
-</div>
-                `;
-                document.getElementById('editForm').innerHTML = formHTML;
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            } catch (err) {
-                showToast('Failed to load member data', 'error');
-            }
-        }
+    async function editMember(id) {
+    try {
+        const res = await axios.get(`${API_URL}/${id}`);
+        const m = res.data;
+        const modal = document.getElementById('editModal');
+        const formHTML = `
+            <input type="hidden" id="edit-id" value="${m._id}">
+            <div><label class="text-sm font-semibold">Name</label><input id="edit-name" value="${escapeHtml(m.name)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+            <div><label class="text-sm font-semibold">Phone</label><input id="edit-phone" value="${escapeHtml(m.phone)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+            <div><label class="text-sm font-semibold">Address</label><input id="edit-address" value="${escapeHtml(m.address)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+            <div><label class="text-sm font-semibold">Email</label><input id="edit-email" value="${escapeHtml(m.email)}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+            <div><label class="text-sm font-semibold">Date</label><input type="date" id="edit-date" value="${m.date?.split('T')[0]}" class="w-full px-4 py-3 border rounded-2xl mt-1"></div>
+            <div><label class="text-sm font-semibold">Comment</label><textarea id="edit-comment" rows="3" class="w-full px-4 py-3 border rounded-2xl mt-1">${escapeHtml(m.comment)}</textarea></div>
+            <div>
+                <label class="text-sm font-semibold">Category</label>
+                <select id="edit-category" class="w-full px-4 py-3 border rounded-2xl mt-1">
+                    <option value="">Select Category</option>
+                    <option value="Floor Member" ${m.memberCategory === 'Floor Member' ? 'selected' : ''}>Floor Member</option>
+                    <option value="Pastor" ${m.memberCategory === 'Pastor' ? 'selected' : ''}>Pastor</option>
+                    <option value="Choir" ${m.memberCategory === 'Choir' ? 'selected' : ''}>Choir</option>
+                    <option value="Minister" ${m.memberCategory === 'Minister' ? 'selected' : ''}>Minister</option>
+                    <option value="Teacher" ${m.memberCategory === 'Teacher' ? 'selected' : ''}>Teacher</option>
+                    <option value="Protocol" ${m.memberCategory === 'Protocol' ? 'selected' : ''}>Protocol</option>
+                    <option value="Sanitation" ${m.memberCategory === 'Sanitation' ? 'selected' : ''}>Sanitation</option>
+                    <option value="Media" ${m.memberCategory === 'Media' ? 'selected' : ''}>Media</option>
+                    <option value="Technical" ${m.memberCategory === 'Technical' ? 'selected' : ''}>Technical</option>
+                </select>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveEdit()" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-medium">Save Changes</button>
+                <button onclick="closeModal()" class="flex-1 border border-gray-300 py-3 rounded-2xl font-medium">Cancel</button>
+            </div>
+        `;
+        document.getElementById('editForm').innerHTML = formHTML;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } catch (err) {
+        showToast('Failed to load member data', 'error');
+    }
+}
 
-        function closeModal() {
-            const modal = document.getElementById('editModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        async function saveEdit() {
-            const id = document.getElementById('edit-id').value;
-            const data = {
-                name: document.getElementById('edit-name').value,
-                phone: document.getElementById('edit-phone').value,
-                address: document.getElementById('edit-address').value,
-                email: document.getElementById('edit-email').value,
-                date: document.getElementById('edit-date').value,
-                Category: document.getElementById('edit-Category').value
-            };
-            try {
-                await axios.put(`${API_URL}/${id}`, data);
-                showToast('Member updated successfully');
-                closeModal();
-                loadMembers();
-            } catch (err) {
-                showToast('Update failed', 'error');
-            }
-        }
+async function saveEdit() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+        name: document.getElementById('edit-name').value,
+        phone: document.getElementById('edit-phone').value,
+        address: document.getElementById('edit-address').value,
+        email: document.getElementById('edit-email').value,
+        date: document.getElementById('edit-date').value,
+        comment: document.getElementById('edit-comment').value,
+        memberCategory: document.getElementById('edit-category').value  // 👈 Fix: use correct ID
+    };
+    try {
+        await axios.put(`${API_URL}/${id}`, data);
+        showToast('Member updated successfully');
+        closeModal();
+        loadMembers();
+    } catch (err) {
+        showToast('Update failed', 'error');
+    }
+}
 
         async function deleteMember(id) {
             if (!confirm('Are you sure you want to delete this member?')) return;
