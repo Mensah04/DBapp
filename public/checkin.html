@@ -14,11 +14,11 @@
         .toast-message { animation: slideOut 3s forwards; position: fixed; top: 20px; right: 20px; z-index: 1000; }
         @keyframes slideOut { 0% { opacity: 1; transform: translateX(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateX(100%); visibility: hidden; } }
 
-   .dynamic-image {
-    height: 150px;
-    position: relative; top: -10px; right: -90px;
-    animation: float 3s ease-in-out infinite;
-}
+        .dynamic-image {
+            height: 150px;
+            position: relative; top: -10px; right: -90px;
+            animation: float 3s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
@@ -26,7 +26,7 @@
 
     <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
         <div class="bg-emerald-600 p-6 text-white text-center">
-        <img src="images/Rccg_logo.png" class="dynamic-image" alt="Floating Logo">
+            <img src="images/Rccg_logo.png" class="dynamic-image" alt="Floating Logo">
             <h1 class="text-2xl font-bold">RCCG TABERNACLE OF PRAISE</h1>
             <p class="text-sm opacity-90">ZONAL PARISH</p>
         </div>
@@ -51,14 +51,19 @@
                         <label class="block text-sm font-semibold">Category *</label>
                         <select id="category" required class="w-full border rounded-xl px-4 py-3">
                             <option value="">Select</option>
-                            <option value="Children">Children</option><option value="Youth">Youth</option>
-                            <option value="Married">Married</option><option value="Single">Single</option><option value="Elder">Elder</option>
+                            <option value="Children">Children</option>
+                            <option value="Youth">Youth</option>
+                            <option value="Married">Married</option>
+                            <option value="Single">Single</option>
+                            <option value="Elder">Elder</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold">Gender *</label>
                         <select id="gender" required class="w-full border rounded-xl px-4 py-3">
-                            <option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option>
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
                         </select>
                     </div>
                 </div>
@@ -80,7 +85,19 @@
                     <i class="fa-regular fa-calendar-check"></i> Check In
                 </button>
             </form>
+
+            <!-- WhatsApp Group Link -->
+            <div class="text-center mt-4">
+                <a href="https://chat.whatsapp.com/1d1GfhQLqol2FaV7rL4n2L?s=sw&p=i&ilr=4"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-xl"></i> Join Our WhatsApp Community
+                </a>
+                <p class="text-xs text-gray-400 mt-2">Stay connected with the church family</p>
+            </div>
         </div>
+
         <div class="bg-gray-50 p-4 text-center text-xs text-gray-500">
             <i class="fa-regular fa-clock"></i> You will be marked as checked in for today's service.
         </div>
