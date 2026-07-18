@@ -10,13 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * { font-family: 'Inter', system-ui, sans-serif; }
-        body { background: linear-gradient(135deg, #f9fafb, #e5e7eb); min-height: 100vh; transition: background 0.3s, color 0.3s; }
-        .toast-message { animation: slideOut 3s forwards; position: fixed; top: 20px; right: 20px; z-index: 1000; }
-        @keyframes slideOut { 0% { opacity: 1; transform: translateX(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateX(100%); visibility: hidden; } }
-        .dynamic-image { height: 150px; position: relative; top: -10px; right: -90px; animation: float 3s ease-in-out infinite; }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-
     
         * {
             font-family: 'Inter', system-ui, sans-serif;
