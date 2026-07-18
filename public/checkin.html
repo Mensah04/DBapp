@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-    
         * {
             font-family: 'Inter', system-ui, sans-serif;
         }
@@ -314,71 +313,71 @@
     </style>
 </head>
 <body>
-    <!-- Dark Mode Toggle -->
-    <button id="darkModeToggle" class="dark-mode-toggle" onclick="toggleDarkMode()">
-        <i id="darkModeIcon" class="fa-solid fa-moon"></i>
-    </button>
 
-    <div id="toastContainer" class="fixed top-5 right-5 z-50"></div>
+    <div id="toastContainer"></div>
 
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden transition-colors duration-300">
+    <div class="card">
         <!-- Header -->
-        <div class="bg-emerald-600 p-6 text-white text-center">
-            <img src="images/Rccg_logo.png" class="dynamic-image" alt="Floating Logo">
-            <h1 class="text-2xl font-bold">RCCG TABERNACLE OF PRAISE</h1>
-            <p class="text-sm opacity-90">ZONAL PARISH</p>
+        <div class="header">
+            <img src="images/Rccg_logo.png" class="church-logo" alt="RCCG TOP Logo">
+            <h1>RCCG TABERNACLE OF PRAISE</h1>
+            <p>ZONAL PARISH</p>
         </div>
 
-        <div class="p-6 space-y-5">
+        <!-- Body -->
+        <div class="body">
             <!-- Welcome Message -->
-            <div class="text-center">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">👋 Welcome!</h2>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    We're so glad you're here. Please fill in your details below to check in for today's service.
-                </p>
+            <div class="welcome-text">
+                <h2>👋 You're Welcome!</h2>
+                <p>We are so glad you are here. Please check in for today's service.</p>
             </div>
 
-            <!-- Today's Service Indicator -->
-            <div class="text-center text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-3">
-                <span class="font-semibold text-gray-700 dark:text-gray-200">Today's Service:</span>
-                <span id="currentService" class="font-bold text-emerald-600 dark:text-emerald-400">Sunday Service</span>
+            <!-- Today's Service -->
+            <div class="service-indicator">
+                <strong>Today's Service:</strong> <span id="currentService">Sunday Service</span>
             </div>
 
+            <!-- QR Section -->
+            <div class="qr-section">
+                <button id="toggleScannerBtn">
+                    <i class="fas fa-qrcode"></i> Scan QR Code
+                </button>
+                <div id="qrReader" style="display: none; margin-top: 0.8rem;"></div>
+                <div class="hint">or fill in your details below</div>
+            </div>
 
-            <!-- Check‑in Form -->
-            <form id="checkinForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Full Name *</label>
-                    <input type="text" id="name" required class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-800 dark:text-white transition">
+            <!-- Check-in Form -->
+            <form id="checkinForm">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="name" required placeholder="e.g. John Doe">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Category *</label>
-                        <select id="category" required class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-800 dark:text-white transition">
-                            <option value="">Select</option>
-                            <option value="Children">Children</option>
-                            <option value="Youth">Youth</option>
-                            <option value="Married">Married</option>
-                            <option value="Single">Single</option>
-                            <option value="Elder">Elder</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Gender *</label>
-                        <select id="gender" required class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-800 dark:text-white transition">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="category" required>
+                        <option value="">Select</option>
+                        <option value="Children">Children</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Married">Married</option>
+                        <option value="Single">Single</option>
+                        <option value="Elder">Elder</option>
+                    </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Phone Number</label>
-                    <input type="tel" id="phone" class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-800 dark:text-white transition">
+                <div class="form-group">
+                    <label>Gender *</label>
+                    <select id="gender" required>
+                        <option value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Service Type *</label>
-                    <select id="serviceType" required class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 dark:bg-gray-800 dark:text-white transition">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" placeholder="e.g. 0556072415">
+                </div>
+                <div class="form-group">
+                    <label>Service Type *</label>
+                    <select id="serviceType" required>
                         <option value="Sunday Service">Sunday Service</option>
                         <option value="Bible Study">Bible Study</option>
                         <option value="Prayer Meeting">Prayer Meeting</option>
@@ -386,41 +385,37 @@
                         <option value="Midweek Service">Midweek Service</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition active:scale-95">
+                <button type="submit" class="btn-checkin">
                     <i class="fa-regular fa-calendar-check"></i> Check In
                 </button>
             </form>
 
-            <!-- Confirmation Screen (hidden by default) -->
-            <div id="confirmationScreen" class="confirmation-screen hidden text-center py-6">
-                <div class="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-solid fa-check text-4xl text-emerald-600 dark:text-emerald-400"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white">✅ Checked In!</h3>
-                <p class="text-gray-600 dark:text-gray-300 mt-2">You have been successfully checked in for today's service.</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Welcome to RCCG Tabernacle of Praise!</p>
-                <button id="resetFormBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl transition">Check In Another Person</button>
+            <!-- Confirmation Screen -->
+            <div id="confirmationScreen" class="confirmation">
+                <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                <h3>✅ Checked In!</h3>
+                <p>You have been successfully checked in.</p>
+                <p style="font-size:0.85rem; color:#64748b;">Welcome to RCCG Tabernacle of Praise!</p>
+                <button id="resetFormBtn" class="btn-reset">Check In Another Person</button>
             </div>
 
-            <!-- WhatsApp Group Link -->
-            <div class="text-center mt-4">
-                <a href="https://chat.whatsapp.com/1d1GfhQLqol2FaV7rL4n2L?s=sw&p=i&ilr=4"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp text-xl"></i> Join Our WhatsApp Community
-                </a>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">Stay connected with the church family</p>
-            </div>
+            <!-- WhatsApp Link -->
+            <a href="https://chat.whatsapp.com/1d1GfhQLqol2FaV7rL4n2L?s=sw&p=i&ilr=4"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="whatsapp-link">
+                <i class="fab fa-whatsapp"></i> Join Our WhatsApp Community
+            </a>
 
             <!-- Service Times -->
-            <div class="text-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-3 mt-2">
-                <p><strong class="text-gray-500 dark:text-gray-300">Service Times:</strong></p>
-                <p>Sunday: 8 AM &amp; 10 AM | Bible Study: Wed 7 PM | Prayer Meeting: Fri 6 PM</p>
+            <div class="service-times">
+                <strong>Service Times</strong><br>
+                Sunday: 8 AM &amp; 10 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; Prayer Meeting: Fri 6 PM
             </div>
         </div>
 
-        <div class="bg-gray-50 dark:bg-gray-800/50 p-4 text-center text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">
+        <!-- Footer -->
+        <div class="footer-note">
             <i class="fa-regular fa-clock"></i> You will be marked as checked in for today's service.
         </div>
     </div>
@@ -434,51 +429,50 @@
         function showToast(msg, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `toast-message bg-white border-l-4 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'} shadow-lg rounded-xl p-3 text-sm mb-2`;
+            toast.className = `toast-message ${type === 'error' ? 'error' : ''}`;
             toast.innerHTML = `<i class="fa-${type === 'success' ? 'solid fa-circle-check text-emerald-500' : 'solid fa-exclamation-triangle text-red-500'} mr-2"></i>${msg}`;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // --- URL param for QR ---
+        // --- Auto-fill from QR ---
+        async function loadMemberById(memberId) {
+            try {
+                const res = await axios.get(`/api/users/${memberId}`);
+                const member = res.data;
+                document.getElementById('name').value = member.name;
+                document.getElementById('phone').value = member.phone;
+                showToast('Member data loaded. Please complete category & gender if needed.');
+            } catch (err) {
+                showToast('Member not found. Please fill manually.', 'error');
+            }
+        }
+
+        // --- QR param ---
         const urlParams = new URLSearchParams(window.location.search);
         const memberId = urlParams.get('memberId');
-        if (memberId) {
-            loadMemberById(memberId);
-        }
+        if (memberId) loadMemberById(memberId);
 
-        // --- Update Today's Service ---
-        const serviceMap = {
-            '0': 'Sunday Service',
-            '1': 'Sunday Service',
-            '2': 'Sunday Service',
-            '3': 'Sunday Service',
-            '4': 'Bible Study',
-            '5': 'Prayer Meeting',
-            '6': 'Midweek Service'
-        };
-        // You can customize this based on the actual day
-        const today = new Date().getDay();
-        document.getElementById('currentService').textContent = serviceMap[today] || 'Sunday Service';
+        // --- Today's Service ---
+        const serviceMap = ['Sunday Service', 'Sunday Service', 'Sunday Service', 'Sunday Service', 'Bible Study', 'Prayer Meeting', 'Midweek Service'];
+        document.getElementById('currentService').textContent = serviceMap[new Date().getDay()] || 'Sunday Service';
 
-        // --- Show Confirmation & Hide Form ---
+        // --- Show / hide confirmation ---
         function showConfirmation() {
             document.getElementById('checkinForm').style.display = 'none';
-            document.getElementById('confirmationScreen').classList.remove('hidden');
+            document.getElementById('confirmationScreen').classList.add('show');
         }
-
         function hideConfirmation() {
             document.getElementById('checkinForm').style.display = 'block';
-            document.getElementById('confirmationScreen').classList.add('hidden');
+            document.getElementById('confirmationScreen').classList.remove('show');
             document.getElementById('checkinForm').reset();
             document.getElementById('category').value = '';
             document.getElementById('gender').value = '';
             document.getElementById('serviceType').value = 'Sunday Service';
         }
-
         document.getElementById('resetFormBtn').addEventListener('click', hideConfirmation);
 
-        // --- Form Submission ---
+        // --- Form Submit ---
         document.getElementById('checkinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
@@ -491,7 +485,7 @@
                 notes: 'Self check‑in'
             };
             if (!data.name || !data.category || !data.gender || !data.serviceType) {
-                showToast('Please fill all required fields', 'error');
+                showToast('Please fill all required fields.', 'error');
                 return;
             }
             try {
@@ -499,13 +493,46 @@
                 showToast('✅ Checked in successfully!');
                 showConfirmation();
             } catch (err) {
-                const msg = err.response?.data?.message || 'Check-in failed';
+                const msg = err.response?.data?.message || 'Check-in failed. Please try again.';
                 showToast(msg, 'error');
             }
         });
 
-        // --- Initialize ---
-        initTheme();
+        // --- QR Scanner Toggle ---
+        document.getElementById('toggleScannerBtn').addEventListener('click', function() {
+            const readerDiv = document.getElementById('qrReader');
+            if (isScanning) {
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        readerDiv.style.display = 'none';
+                        isScanning = false;
+                        this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                    }).catch(() => {});
+                }
+            } else {
+                readerDiv.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-stop"></i> Stop Scanning';
+                html5QrCode = new Html5Qrcode("qrReader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: 250 },
+                    (decodedText) => {
+                        const match = decodedText.match(/[?&]memberId=([^&]+)/);
+                        if (match && match[1]) {
+                            loadMemberById(match[1]);
+                            html5QrCode.stop();
+                            readerDiv.style.display = 'none';
+                            isScanning = false;
+                            this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                            showToast('Member loaded! Complete the form.');
+                        } else {
+                            showToast('Invalid QR code – no member ID found.', 'error');
+                        }
+                    },
+                    (error) => console.warn(error)
+                ).then(() => { isScanning = true; }).catch(err => console.error(err));
+            }
+        });
     </script>
 </body>
 </html>
