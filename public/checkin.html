@@ -363,10 +363,10 @@
 
             <!-- QR Section -->
             <div class="qr-section">
-                <button id="toggleScannerBtn">
+                <button id="">
                     <i class=""></i> FILL IN YOUR DETAILS BELOW
                 </button>
-                <div id="qrReader" style="display: none; margin-top: 0.8rem;"></div>
+                <div id="" style="display: none; margin-top: 0.8rem;"></div>
                 <div class="hint">God bless you as you check in</div>
             </div>
 
@@ -501,42 +501,6 @@
             } catch (err) {
                 const msg = err.response?.data?.message || 'Check-in failed. Please try again.';
                 showToast(msg, 'error');
-            }
-        });
-
-        // --- QR Scanner Toggle ---
-        document.getElementById('toggleScannerBtn').addEventListener('click', function() {
-            const readerDiv = document.getElementById('qrReader');
-            if (isScanning) {
-                if (html5QrCode) {
-                    html5QrCode.stop().then(() => {
-                        readerDiv.style.display = 'none';
-                        isScanning = false;
-                        this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
-                    }).catch(() => {});
-                }
-            } else {
-                readerDiv.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-stop"></i> Stop Scanning';
-                html5QrCode = new Html5Qrcode("qrReader");
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: 250 },
-                    (decodedText) => {
-                        const match = decodedText.match(/[?&]memberId=([^&]+)/);
-                        if (match && match[1]) {
-                            loadMemberById(match[1]);
-                            html5QrCode.stop();
-                            readerDiv.style.display = 'none';
-                            isScanning = false;
-                            this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
-                            showToast('Member loaded! Complete the form.');
-                        } else {
-                            showToast('Invalid QR code – no member ID found.', 'error');
-                        }
-                    },
-                    (error) => console.warn(error)
-                ).then(() => { isScanning = true; }).catch(err => console.error(err));
             }
         });
     </script>
