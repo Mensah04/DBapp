@@ -91,6 +91,7 @@
 
         .body {
             padding: 1.8rem 1.8rem 2rem;
+            position: relative;
         }
 
         .welcome-text {
@@ -208,53 +209,75 @@
             transform: scale(0.97);
         }
 
-        .confirmation {
+        /* ---- DARK CONFIRMATION SCREEN (overlay style) ---- */
+        .confirmation-overlay {
             display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            z-index: 10;
+            padding: 2rem 1.5rem;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
             text-align: center;
-            padding: 1.5rem 0 0.5rem;
+            animation: fadeIn 0.5s ease forwards;
         }
-        .confirmation.show {
-            display: block;
-            animation: fadeInUp 0.4s ease forwards;
+        .confirmation-overlay.show {
+            display: flex;
         }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
-        .confirmation .check-icon {
-            width: 70px;
-            height: 70px;
-            background: #dcfce7;
+
+        .confirmation-overlay .check-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(16, 185, 129, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 2.5rem;
-            color: #059669;
+            margin: 0 auto 1.2rem;
+            font-size: 2.8rem;
+            color: #34d399;
+            border: 2px solid rgba(16, 185, 129, 0.3);
         }
-        .confirmation h3 {
-            font-size: 1.5rem;
-            color: #1e293b;
-            margin: 0 0 0.3rem;
+        .confirmation-overlay h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 0.4rem;
         }
-        .confirmation p {
-            color: #64748b;
+        .confirmation-overlay p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
             margin: 0.2rem 0;
         }
-        .btn-reset {
-            background: #e2e8f0;
-            color: #1e293b;
-            border: none;
-            padding: 0.6rem 1.8rem;
+        .confirmation-overlay .sub-message {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+        .confirmation-overlay .btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.7rem 2rem;
             border-radius: 10rem;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             transition: background 0.2s;
         }
-        .btn-reset:hover {
-            background: #cbd5e1;
+        .confirmation-overlay .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .whatsapp-link {
@@ -309,6 +332,7 @@
             body { padding: 1rem; }
             .body { padding: 1.5rem; }
             .header h1 { font-size: 1.3rem; }
+            .confirmation-overlay { padding: 1.5rem; }
         }
     </style>
 </head>
@@ -340,10 +364,10 @@
             <!-- QR Section -->
             <div class="qr-section">
                 <button id="toggleScannerBtn">
-                    <i class="fas fa-qrcode"></i> Scan QR Code
+                    <i class=""></i> FILL IN YOUR DETAILS BELOW
                 </button>
                 <div id="qrReader" style="display: none; margin-top: 0.8rem;"></div>
-                <div class="hint">or fill in your details below</div>
+                <div class="hint">God bless you as you check in</div>
             </div>
 
             <!-- Check-in Form -->
@@ -390,12 +414,12 @@
                 </button>
             </form>
 
-            <!-- Confirmation Screen -->
-            <div id="confirmationScreen" class="confirmation">
+            <!-- DARK CONFIRMATION OVERLAY -->
+            <div id="confirmationScreen" class="confirmation-overlay">
                 <div class="check-icon"><i class="fa-solid fa-check"></i></div>
                 <h3>✅ Checked In!</h3>
                 <p>You have been successfully checked in.</p>
-                <p style="font-size:0.85rem; color:#64748b;">Welcome to RCCG Tabernacle of Praise!</p>
+                <p class="sub-message">Welcome to RCCG Tabernacle of Praise!</p>
                 <button id="resetFormBtn" class="btn-reset">Check In Another Person</button>
             </div>
 
@@ -410,7 +434,7 @@
             <!-- Service Times -->
             <div class="service-times">
                 <strong>Service Times</strong><br>
-                Sunday: 8 AM &amp; 10 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; Prayer Meeting: Fri 6 PM
+                Sunday: 8 AM &amp; 10 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; 
             </div>
         </div>
 
@@ -435,29 +459,11 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // --- Auto-fill from QR ---
-        async function loadMemberById(memberId) {
-            try {
-                const res = await axios.get(`/api/users/${memberId}`);
-                const member = res.data;
-                document.getElementById('name').value = member.name;
-                document.getElementById('phone').value = member.phone;
-                showToast('Member data loaded. Please complete category & gender if needed.');
-            } catch (err) {
-                showToast('Member not found. Please fill manually.', 'error');
-            }
-        }
-
-        // --- QR param ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const memberId = urlParams.get('memberId');
-        if (memberId) loadMemberById(memberId);
-
         // --- Today's Service ---
         const serviceMap = ['Sunday Service', 'Sunday Service', 'Sunday Service', 'Sunday Service', 'Bible Study', 'Prayer Meeting', 'Midweek Service'];
         document.getElementById('currentService').textContent = serviceMap[new Date().getDay()] || 'Sunday Service';
 
-        // --- Show / hide confirmation ---
+        // --- Show / hide dark confirmation ---
         function showConfirmation() {
             document.getElementById('checkinForm').style.display = 'none';
             document.getElementById('confirmationScreen').classList.add('show');
