@@ -172,9 +172,31 @@
         </div>
 
         <!-- Statistics Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8" id="statsGrid">
-            <!-- dynamic stats injected via JS -->
+         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4" id="statsGrid">
+    <!-- dynamic stats injected via JS -->
+         </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 mb-8 flex flex-wrap justify-between items-center">
+    <div class="flex items-center gap-4">
+        <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Today's Check‑ins</p>
+            <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400" id="todayCount">0</p>
         </div>
+        <div class="h-12 w-px bg-gray-200 dark:bg-gray-600"></div>
+        <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">vs. Same Day Last Week</p>
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="lastWeekCount">0</p>
+        </div>
+        <div class="h-12 w-px bg-gray-200 dark:bg-gray-600"></div>
+        <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Trend</p>
+            <p class="text-2xl font-bold" id="trendIndicator">—</p>
+        </div>
+    </div>
+    <div class="text-sm text-gray-400 dark:text-gray-500">
+        <i class="fa-regular fa-clock mr-1"></i> Updated: <span id="statsUpdateTime">Just now</span>
+    </div>
+</div>
 
         <!-- Two-column layout: sticky form + scrollable table -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -426,22 +448,46 @@
         }
 
         // Load stats
-        async function loadStats() {
-            try {
-                const res = await axios.get(`${API_URL}/stats`);
-                const { today } = res.data;
-                statsGrid.innerHTML = `
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Today's Total</h3><p class="text-2xl font-bold">${today.total || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Children</h3><p class="text-2xl font-bold">${today.byCategory?.Children || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Youth</h3><p class="text-2xl font-bold">${today.byCategory?.Youth || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Married</h3><p class="text-2xl font-bold">${today.byCategory?.Married || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Single</h3><p class="text-2xl font-bold">${today.byCategory?.Single || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Male</h3><p class="text-2xl font-bold">${today.byGender?.Male || 0}</p></div>
-                    <div class="bg-white rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 text-sm">Female</h3><p class="text-2xl font-bold">${today.byGender?.Female || 0}</p></div>
-                `;
-            } catch (err) { console.error(err); }
+       async function loadStats() {
+    try {
+        // Fetch stats with week range for comparison
+        const res = await axios.get(`${API_URL}/stats?range=week`);
+        const { today, lastWeekTotal } = res.data;
+
+        // Update stats grid (keep your existing cards)
+        statsGrid.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Today's Total</h3><p class="text-2xl font-bold">${today.total || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Children</h3><p class="text-2xl font-bold">${today.byCategory?.Children || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Youth</h3><p class="text-2xl font-bold">${today.byCategory?.Youth || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Married</h3><p class="text-2xl font-bold">${today.byCategory?.Married || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Single</h3><p class="text-2xl font-bold">${today.byCategory?.Single || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Male</h3><p class="text-2xl font-bold">${today.byGender?.Male || 0}</p></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Female</h3><p class="text-2xl font-bold">${today.byGender?.Female || 0}</p></div>
+        `;
+
+        // Update the new stats row
+        document.getElementById('todayCount').textContent = today.total || 0;
+        document.getElementById('lastWeekCount').textContent = lastWeekTotal || 0;
+
+        // Calculate trend
+        const todayTotal = today.total || 0;
+        const lastWeek = lastWeekTotal || 0;
+        const trendIndicator = document.getElementById('trendIndicator');
+        if (todayTotal > lastWeek) {
+            trendIndicator.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400">↑ ${todayTotal - lastWeek} more</span>`;
+        } else if (todayTotal < lastWeek) {
+            trendIndicator.innerHTML = `<span class="text-red-600 dark:text-red-400">↓ ${lastWeek - todayTotal} fewer</span>`;
+        } else {
+            trendIndicator.innerHTML = `<span class="text-gray-500 dark:text-gray-400">— same</span>`;
         }
 
+        // Update timestamp
+        document.getElementById('statsUpdateTime').textContent = new Date().toLocaleTimeString();
+
+    } catch (err) {
+        console.error('Stats error:', err);
+    }
+}
         // Load attendance with filters
         async function loadAttendance() {
             try {
