@@ -433,7 +433,7 @@
             <!-- Service Times -->
             <div class="service-times">
                 <strong>Service Times</strong><br>
-                Worship Service: Sunday 9 AM &nbsp;·&nbsp; Mid-Week Service: Wed 7 PM &nbsp;·&nbsp; 
+                Worship Service: Sunday 9 AM &nbsp;·&nbsp; Midweek Service: Wed 7 PM &nbsp;·&nbsp; 
             </div>
         </div>
 
@@ -477,7 +477,7 @@
         if (memberId) loadMemberById(memberId);
 
         // --- Today's Service ---
-        const serviceMap = ['Sunday Service', 'Sunday Service', 'Sunday Service', 'Sunday Service', 'Bible Study', 'Prayer Meeting', 'Midweek Service'];
+        const serviceMap = ['Sunday Service', 'Sunday Service', 'No Service', 'Midweek Service', 'No Service', 'PNo Service', 'No Service'];
         document.getElementById('currentService').textContent = serviceMap[new Date().getDay()] || 'Sunday Service';
 
         // --- Show / hide dark confirmation ---
