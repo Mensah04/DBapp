@@ -10,330 +10,73 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * {
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        body {
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            margin: 0;
-        }
-        .toast-message {
-            animation: slideOut 3s forwards;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: white;
-            border-left: 4px solid #10b981;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            font-size: 0.9rem;
-            max-width: 350px;
-        }
-        .toast-message.error {
-            border-left-color: #ef4444;
-        }
-        @keyframes slideOut {
-            0% { opacity: 0; transform: translateX(30px); }
-            10% { opacity: 1; transform: translateX(0); }
-            90% { opacity: 1; transform: translateX(0); }
-            100% { opacity: 0; transform: translateX(30px); visibility: hidden; }
-        }
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; margin: 0; }
+        .toast-message { animation: slideOut 3s forwards; position: fixed; top: 20px; right: 20px; z-index: 1000; background: white; border-left: 4px solid #10b981; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.5rem; font-size: 0.9rem; max-width: 350px; }
+        .toast-message.error { border-left-color: #ef4444; }
+        @keyframes slideOut { 0% { opacity: 0; transform: translateX(30px); } 10% { opacity: 1; transform: translateX(0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translateX(30px); visibility: hidden; } }
 
-        .church-logo {
-            height: 100px;
-            display: block;
-            margin: 0 auto 0.5rem;
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
-        }
+        .church-logo { height: 100px; display: block; margin: 0 auto 0.5rem; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
 
-        .card {
-            background: white;
-            border-radius: 2rem;
-            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1);
-            overflow: hidden;
-            max-width: 440px;
-            width: 100%;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-        }
+        .card { background: white; border-radius: 2rem; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1); overflow: hidden; max-width: 440px; width: 100%; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
 
-        .header {
-            background: linear-gradient(135deg, #059669, #047857);
-            padding: 1.5rem 1.5rem 1.2rem;
-            text-align: center;
-            color: white;
-        }
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0.25rem 0 0.1rem;
-            letter-spacing: -0.5px;
-        }
-        .header p {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            margin: 0;
-        }
+        .header { background: linear-gradient(135deg, #059669, #047857); padding: 1.5rem 1.5rem 1.2rem; text-align: center; color: white; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; margin: 0.25rem 0 0.1rem; letter-spacing: -0.5px; }
+        .header p { font-size: 0.85rem; opacity: 0.9; margin: 0; }
 
-        .body {
-            padding: 1.8rem 1.8rem 2rem;
-            position: relative;
-        }
+        .body { padding: 1.8rem 1.8rem 2rem; position: relative; }
 
-        .welcome-text {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        .welcome-text h2 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0 0 0.3rem;
-        }
-        .welcome-text p {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin: 0;
-        }
+        .stats-row { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.6rem 1rem; border-radius: 12px; margin-bottom: 1.2rem; font-size: 0.9rem; color: #1e293b; }
+        .stats-row .count { font-weight: 700; color: #059669; font-size: 1.2rem; }
+        .stats-row .compare { color: #64748b; font-size: 0.8rem; }
 
-        .service-indicator {
-            background: #f1f5f9;
-            border-radius: 12px;
-            padding: 0.6rem 1rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #475569;
-            margin-bottom: 1.5rem;
-        }
-        .service-indicator strong {
-            color: #1e293b;
-        }
-        .service-indicator span {
-            color: #059669;
-            font-weight: 700;
-        }
+        .welcome-text { text-align: center; margin-bottom: 1.5rem; }
+        .welcome-text h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0 0 0.3rem; }
+        .welcome-text p { color: #64748b; font-size: 0.9rem; margin: 0; }
 
-        .qr-section {
-            background: #f8fafc;
-            border-radius: 1.2rem;
-            padding: 1.2rem;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            border: 1px solid #e2e8f0;
-        }
-        .qr-section button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.7rem 1.2rem;
-            border-radius: 10rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background 0.2s;
-        }
-        .qr-section button:hover {
-            background: #2563eb;
-        }
-        .qr-section .hint {
-            color: #94a3b8;
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
-        }
+        .service-indicator { background: #f1f5f9; border-radius: 12px; padding: 0.6rem 1rem; text-align: center; font-size: 0.9rem; color: #475569; margin-bottom: 1.5rem; }
+        .service-indicator strong { color: #1e293b; }
+        .service-indicator span { color: #059669; font-weight: 700; }
 
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #334155;
-            margin-bottom: 0.25rem;
-        }
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
-            background: white;
-            transition: border 0.2s, box-shadow 0.2s;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-        }
+        .qr-section { background: #f8fafc; border-radius: 1.2rem; padding: 1.2rem; text-align: center; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; }
+        .qr-section button { background: #3b82f6; color: white; border: none; padding: 0.7rem 1.2rem; border-radius: 10rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s; }
+        .qr-section button:hover { background: #2563eb; }
+        .qr-section .hint { color: #94a3b8; font-size: 0.75rem; margin-top: 0.5rem; }
 
-        .btn-checkin {
-            background: #10b981;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 0.9rem;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transition: background 0.2s, transform 0.1s;
-            margin-top: 0.25rem;
-        }
-        .btn-checkin:hover {
-            background: #059669;
-        }
-        .btn-checkin:active {
-            transform: scale(0.97);
-        }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 0.25rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white; transition: border 0.2s, box-shadow 0.2s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
 
-        /* ---- DARK CONFIRMATION SCREEN (overlay style) ---- */
-        .confirmation-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(8px);
-            border-radius: 2rem;
-            z-index: 10;
-            padding: 2rem 1.5rem;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            text-align: center;
-            animation: fadeIn 0.5s ease forwards;
-        }
-        .confirmation-overlay.show {
-            display: flex;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        .welcome-back { display: none; background: #dbeafe; color: #1e40af; padding: 0.5rem 1rem; border-radius: 8px; margin-top: -0.5rem; margin-bottom: 1rem; font-weight: 600; text-align: center; }
+        .welcome-back.show { display: block; }
 
-        .confirmation-overlay .check-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(16, 185, 129, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.2rem;
-            font-size: 2.8rem;
-            color: #34d399;
-            border: 2px solid rgba(16, 185, 129, 0.3);
-        }
-        .confirmation-overlay h3 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white;
-            margin: 0 0 0.4rem;
-        }
-        .confirmation-overlay p {
-            color: #cbd5e1;
-            font-size: 0.95rem;
-            margin: 0.2rem 0;
-        }
-        .confirmation-overlay .sub-message {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            margin-top: 0.3rem;
-        }
-        .confirmation-overlay .btn-reset {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.7rem 2rem;
-            border-radius: 10rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1.5rem;
-            transition: background 0.2s;
-        }
-        .confirmation-overlay .btn-reset:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .btn-checkin { background: #10b981; color: white; border: none; width: 100%; padding: 0.9rem; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.2s, transform 0.1s; margin-top: 0.25rem; }
+        .btn-checkin:hover { background: #059669; }
+        .btn-checkin:active { transform: scale(0.97); }
 
-        .whatsapp-link {
-            display: block;
-            background: #25D366;
-            color: white;
-            text-align: center;
-            padding: 0.8rem;
-            border-radius: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            margin-top: 1.5rem;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .whatsapp-link:hover {
-            background: #1da851;
-        }
-        .whatsapp-link i {
-            font-size: 1.3rem;
-        }
+        .confirmation-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); border-radius: 2rem; z-index: 10; padding: 2rem 1.5rem; align-items: center; justify-content: center; flex-direction: column; text-align: center; animation: fadeIn 0.5s ease forwards; }
+        .confirmation-overlay.show { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .confirmation-overlay .check-icon { width: 80px; height: 80px; background: rgba(16, 185, 129, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; font-size: 2.8rem; color: #34d399; border: 2px solid rgba(16, 185, 129, 0.3); }
+        .confirmation-overlay h3 { font-size: 1.8rem; font-weight: 700; color: white; margin: 0 0 0.4rem; }
+        .confirmation-overlay p { color: #cbd5e1; font-size: 0.95rem; margin: 0.2rem 0; }
+        .confirmation-overlay .sub-message { color: #94a3b8; font-size: 0.85rem; margin-top: 0.3rem; }
+        .confirmation-overlay .btn-reset { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.7rem 2rem; border-radius: 10rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem; transition: background 0.2s; }
+        .confirmation-overlay .btn-reset:hover { background: rgba(255,255,255,0.2); }
 
-        .service-times {
-            text-align: center;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1.2rem;
-            margin-top: 1.2rem;
-        }
-        .service-times strong {
-            color: #64748b;
-        }
+        .whatsapp-link { display: block; background: #25D366; color: white; text-align: center; padding: 0.8rem; border-radius: 12px; font-weight: 600; text-decoration: none; margin-top: 1.5rem; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .whatsapp-link:hover { background: #1da851; }
 
-        .footer-note {
-            background: #f8fafc;
-            padding: 0.8rem 1.5rem;
-            text-align: center;
-            font-size: 0.7rem;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-        }
-        .footer-note i {
-            margin-right: 0.3rem;
-        }
+        .service-times { text-align: center; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 1.2rem; margin-top: 1.2rem; }
+        .service-times strong { color: #64748b; }
 
-        /* Responsive */
-        @media (max-width: 480px) {
-            body { padding: 1rem; }
-            .body { padding: 1.5rem; }
-            .header h1 { font-size: 1.3rem; }
-            .confirmation-overlay { padding: 1.5rem; }
-        }
+        .footer-note { background: #f8fafc; padding: 0.8rem 1.5rem; text-align: center; font-size: 0.7rem; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+        .footer-note i { margin-right: 0.3rem; }
+
+        @media (max-width: 480px) { body { padding: 1rem; } .body { padding: 1.5rem; } .header h1 { font-size: 1.3rem; } .confirmation-overlay { padding: 1.5rem; } }
     </style>
 </head>
 <body>
@@ -341,20 +84,29 @@
     <div id="toastContainer"></div>
 
     <div class="card">
-        <!-- Header -->
         <div class="header">
             <img src="images/Rccg_logo.png" class="church-logo" alt="RCCG TOP Logo">
             <h1>RCCG TABERNACLE OF PRAISE</h1>
             <p>ZONAL PARISH</p>
         </div>
 
-        <!-- Body -->
         <div class="body">
+
+            <!-- Check-in Count Display & Analytics -->
+            <div class="stats-row">
+                <span><i class="fa-regular fa-calendar-check"></i> Today's Check‑ins</span>
+                <span class="count" id="todayCount">0</span>
+                <span class="compare">vs last week: <span id="lastWeekCount">0</span></span>
+            </div>
+
             <!-- Welcome Message -->
             <div class="welcome-text">
                 <h2>👋 You're Welcome!</h2>
                 <p>We are so glad you are here. Please check in for today's service.</p>
             </div>
+
+            <!-- Welcome Back Message (dynamic) -->
+            <div id="welcomeBack" class="welcome-back"></div>
 
             <!-- Today's Service -->
             <div class="service-indicator">
@@ -363,11 +115,9 @@
 
             <!-- QR Section -->
             <div class="qr-section">
-                <button id="">
-                    <i class=""></i> FILL IN YOUR DETAILS BELOW
-                </button>
-                <div id="" style="display: none; margin-top: 0.8rem;"></div>
-                <div class="hint">God bless you as you check in</div>
+                <button id="toggleScannerBtn"><i class="fas fa-qrcode"></i> Scan QR Code</button>
+                <div id="qrReader" style="display: none; margin-top: 0.8rem;"></div>
+                <div class="hint">or fill in your details below</div>
             </div>
 
             <!-- Check-in Form -->
@@ -377,9 +127,14 @@
                     <input type="text" id="name" required placeholder="e.g. John Doe">
                 </div>
                 <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="phone" required placeholder="e.g. 0556072415">
+                </div>
+                <div class="form-group">
                     <label>Category *</label>
                     <select id="category" required>
                         <option value="">Select</option>
+                        <option value="Children">Children</option>
                         <option value="Youth">Youth</option>
                         <option value="Married">Married</option>
                         <option value="Single">Single</option>
@@ -395,10 +150,6 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="tel" id="phone" placeholder="e.g. 0556072415">
-                </div>
-                <div class="form-group">
                     <label>Service Type *</label>
                     <select id="serviceType" required>
                         <option value="Sunday Service">Sunday Service</option>
@@ -408,12 +159,21 @@
                         <option value="Midweek Service">Midweek Service</option>
                     </select>
                 </div>
+
+                <!-- Optional: Send confirmation toggle -->
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="sendConfirmation" checked>
+                        <span style="font-weight: normal;">Send me a thank‑you SMS/email (if phone/email provided)</span>
+                    </label>
+                </div>
+
                 <button type="submit" class="btn-checkin">
                     <i class="fa-regular fa-calendar-check"></i> Check In
                 </button>
             </form>
 
-            <!-- DARK CONFIRMATION OVERLAY -->
+            <!-- Confirmation Overlay -->
             <div id="confirmationScreen" class="confirmation-overlay">
                 <div class="check-icon"><i class="fa-solid fa-check"></i></div>
                 <h3>✅ Checked In!</h3>
@@ -423,23 +183,19 @@
             </div>
 
             <!-- WhatsApp Link -->
-            <a href="https://chat.whatsapp.com/1d1GfhQLqol2FaV7rL4n2L?s=sw&p=i&ilr=4"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="whatsapp-link">
+            <a href="https://chat.whatsapp.com/1d1GfhQLqol2FaV7rL4n2L?s=sw&p=i&ilr=4" target="_blank" rel="noopener noreferrer" class="whatsapp-link">
                 <i class="fab fa-whatsapp"></i> Join Our WhatsApp Community
             </a>
 
             <!-- Service Times -->
             <div class="service-times">
                 <strong>Service Times</strong><br>
-                Worship Service: Sunday 9 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; 
+                Sunday: 8 AM &amp; 10 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; Prayer Meeting: Fri 6 PM
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="footer-note">
-            <i class="fa-regular fa-clock"></i> Jesus Christ The Same Yesterday, Today and Forever.
+            <i class="fa-regular fa-clock"></i> You will be marked as checked in for today's service.
         </div>
     </div>
 
@@ -447,6 +203,7 @@
         const API_URL = '/api/attendance';
         let html5QrCode = null;
         let isScanning = false;
+        let currentMemberName = '';
 
         // --- Toast ---
         function showToast(msg, type = 'success') {
@@ -458,8 +215,94 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // --- Load Stats (today count + last week) ---
+        async function loadStats() {
+            try {
+                const res = await axios.get('/api/attendance/stats?range=week');
+                const { today, lastWeekTotal } = res.data;
+                document.getElementById('todayCount').textContent = today.total || 0;
+                document.getElementById('lastWeekCount').textContent = lastWeekTotal || 0;
+            } catch (err) {
+                console.warn('Stats load error', err);
+            }
+        }
+
+        // --- Welcome Back: check if phone exists ---
+        let phoneCheckTimeout = null;
+        document.getElementById('phone').addEventListener('input', function() {
+            clearTimeout(phoneCheckTimeout);
+            const phone = this.value.trim();
+            const welcomeBackDiv = document.getElementById('welcomeBack');
+            if (phone.length < 8) {
+                welcomeBackDiv.classList.remove('show');
+                return;
+            }
+            phoneCheckTimeout = setTimeout(async () => {
+                try {
+                    const res = await axios.get(`/api/users/lookup?phone=${encodeURIComponent(phone)}`);
+                    if (res.data.exists) {
+                        currentMemberName = res.data.name;
+                        welcomeBackDiv.textContent = `👋 Welcome back, ${currentMemberName}!`;
+                        welcomeBackDiv.classList.add('show');
+                    } else {
+                        welcomeBackDiv.classList.remove('show');
+                    }
+                } catch (err) {
+                    // ignore
+                }
+            }, 500);
+        });
+
+        // --- Send Confirmation (SMS or Email) ---
+        async function sendConfirmation(name, phone, email) {
+            try {
+                // Try SMS first if phone exists
+                if (phone) {
+                    await axios.post('/send-message', {
+                        name: name,
+                        phone: phone,
+                        message: `Thank you for checking in at RCCG Tabernacle of Praise, ${name}! We're blessed to have you.`
+                    });
+                    showToast('📱 SMS sent!');
+                } else if (email) {
+                    // If no phone, try email (you can add email field or use member's email from lookup)
+                    await axios.post('/api/send-email', {
+                        to: email,
+                        subject: 'Thank you for checking in!',
+                        message: `Dear ${name}, thank you for checking in at RCCG Tabernacle of Praise. We're blessed to have you!`,
+                        memberName: name
+                    });
+                    showToast('📧 Email sent!');
+                }
+            } catch (err) {
+                console.warn('Confirmation send failed', err);
+                // Don't show error to user; it's a nice-to-have
+            }
+        }
+
+        // --- Auto-fill from QR ---
+        async function loadMemberById(memberId) {
+            try {
+                const res = await axios.get(`/api/users/${memberId}`);
+                const member = res.data;
+                document.getElementById('name').value = member.name;
+                document.getElementById('phone').value = member.phone;
+                // Trigger welcome back check
+                const event = new Event('input');
+                document.getElementById('phone').dispatchEvent(event);
+                showToast('Member data loaded. Please complete category & gender if needed.');
+            } catch (err) {
+                showToast('Member not found. Please fill manually.', 'error');
+            }
+        }
+
+        // --- QR param ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const memberId = urlParams.get('memberId');
+        if (memberId) loadMemberById(memberId);
+
         // --- Today's Service ---
-        const serviceMap = ['Sunday Service', 'No Service', '', 'Midweek Service', '', 'No Service', 'No Service'];
+        const serviceMap = ['Sunday Service', 'Sunday Service', 'Sunday Service', 'Sunday Service', 'Bible Study', 'Prayer Meeting', 'Midweek Service'];
         document.getElementById('currentService').textContent = serviceMap[new Date().getDay()] || 'Sunday Service';
 
         // --- Show / hide dark confirmation ---
@@ -474,34 +317,88 @@
             document.getElementById('category').value = '';
             document.getElementById('gender').value = '';
             document.getElementById('serviceType').value = 'Sunday Service';
+            document.getElementById('welcomeBack').classList.remove('show');
+            loadStats(); // refresh count
         }
         document.getElementById('resetFormBtn').addEventListener('click', hideConfirmation);
 
         // --- Form Submit ---
         document.getElementById('checkinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                name: document.getElementById('name').value.trim(),
-                category: document.getElementById('category').value,
-                gender: document.getElementById('gender').value,
-                phone: document.getElementById('phone').value.trim(),
-                serviceType: document.getElementById('serviceType').value,
-                date: new Date().toISOString(),
-                notes: 'Self check‑in'
-            };
-            if (!data.name || !data.category || !data.gender || !data.serviceType) {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const category = document.getElementById('category').value;
+            const gender = document.getElementById('gender').value;
+            const serviceType = document.getElementById('serviceType').value;
+
+            if (!name || !phone || !category || !gender || !serviceType) {
                 showToast('Please fill all required fields.', 'error');
                 return;
             }
+
+            const data = {
+                name,
+                category,
+                gender,
+                phone,
+                serviceType,
+                date: new Date().toISOString(),
+                notes: 'Self check‑in'
+            };
+
             try {
                 await axios.post(API_URL, data);
                 showToast('✅ Checked in successfully!');
+                // Send confirmation if checkbox is checked
+                if (document.getElementById('sendConfirmation').checked) {
+                    await sendConfirmation(name, phone); // you can also try to fetch email from lookup if needed
+                }
                 showConfirmation();
+                loadStats(); // update count
             } catch (err) {
                 const msg = err.response?.data?.message || 'Check-in failed. Please try again.';
                 showToast(msg, 'error');
             }
         });
+
+        // --- QR Scanner Toggle ---
+        document.getElementById('toggleScannerBtn').addEventListener('click', function() {
+            const readerDiv = document.getElementById('qrReader');
+            if (isScanning) {
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        readerDiv.style.display = 'none';
+                        isScanning = false;
+                        this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                    }).catch(() => {});
+                }
+            } else {
+                readerDiv.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-stop"></i> Stop Scanning';
+                html5QrCode = new Html5Qrcode("qrReader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: 250 },
+                    (decodedText) => {
+                        const match = decodedText.match(/[?&]memberId=([^&]+)/);
+                        if (match && match[1]) {
+                            loadMemberById(match[1]);
+                            html5QrCode.stop();
+                            readerDiv.style.display = 'none';
+                            isScanning = false;
+                            this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+                            showToast('Member loaded! Complete the form.');
+                        } else {
+                            showToast('Invalid QR code – no member ID found.', 'error');
+                        }
+                    },
+                    (error) => console.warn(error)
+                ).then(() => { isScanning = true; }).catch(err => console.error(err));
+            }
+        });
+
+        // --- Initial load ---
+        loadStats();
     </script>
 </body>
 </html>
