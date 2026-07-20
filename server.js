@@ -408,6 +408,17 @@ app.delete('/api/users/:id', isAuthenticated, authorize('admin'), async (req, re
     res.json({ message: 'User deleted' });
 });
 
+app.get('/api/users/lookup', isAuthenticated, async (req, res) => {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ error: 'Phone required' });
+    const user = await User.findOne({ phone });
+    if (user) {
+        res.json({ exists: true, name: user.name });
+    } else {
+        res.json({ exists: false });
+    }
+});
+
 // Follow-up routes
 app.get('/api/followups', async (req, res) => {
     const { range = 'all', status } = req.query;
@@ -675,23 +686,62 @@ app.get('/api/attendance', isAuthenticated, async (req, res) => {
 
 app.get('/api/attendance/stats', isAuthenticated, async (req, res) => {
     try {
+        const { range = 'today' } = req.query;
+        let startDate, endDate;
+        const now = new Date();
+
+        if (range === 'today') {
+            startDate = new Date(now);
+            startDate.setUTCHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setUTCDate(endDate.getUTCDate() + 1);
+        } else if (range === 'week') {
+            // Last 7 days from today
+            startDate = new Date(now);
+            startDate.setUTCDate(startDate.getUTCDate() - 7);
+            startDate.setUTCHours(0, 0, 0, 0);
+            endDate = new Date(now);
+            endDate.setUTCHours(23, 59, 59, 999);
+        } else {
+            return res.status(400).json({ error: 'Invalid range' });
+        }
+
+        const records = await Attendance.find({
+            date: { $gte: startDate, $lt: endDate }
+        });
+
+        // For today's stats (same as before)
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setUTCHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const todayRecords = await Attendance.find({ date: { $gte: today, $lt: tomorrow } });
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+        const todayRecords = records.filter(r => r.date >= today && r.date < tomorrow);
+
         const byCategory = { Children: 0, Youth: 0, Married: 0, Single: 0, Elder: 0 };
         const byGender = { Male: 0, Female: 0 };
         todayRecords.forEach(record => {
             if (record.category) byCategory[record.category] = (byCategory[record.category] || 0) + 1;
             if (record.gender) byGender[record.gender] = (byGender[record.gender] || 0) + 1;
         });
+
+        // Get last week's total (same day last week)
+        const lastWeekStart = new Date(now);
+        lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
+        lastWeekStart.setUTCHours(0, 0, 0, 0);
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setUTCDate(lastWeekEnd.getUTCDate() + 1);
+        const lastWeekRecords = await Attendance.find({
+            date: { $gte: lastWeekStart, $lt: lastWeekEnd }
+        });
+
         res.json({
             today: {
                 total: todayRecords.length,
                 byCategory,
                 byGender
-            }
+            },
+            lastWeekTotal: lastWeekRecords.length,
+            weeklyTrend: records.length // optional
         });
     } catch (error) {
         console.error('Stats error:', error);
