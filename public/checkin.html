@@ -108,16 +108,10 @@
             <!-- Welcome Back Message (dynamic) -->
             <div id="welcomeBack" class="welcome-back"></div>
 
-            <!-- Today's Service -->
-            <div class="service-indicator">
-                <strong>Today's Service:</strong> <span id="currentService">Sunday Service</span>
-            </div>
-
             <!-- QR Section -->
-            <div class="qr-section">
-                <button id="toggleScannerBtn"><i class="fas fa-qrcode"></i> Scan QR Code</button>
-                <div id="qrReader" style="display: none; margin-top: 0.8rem;"></div>
-                <div class="hint">or fill in your details below</div>
+            <div class="">
+                <button id=""></i>Fill In Your Details To Check-In</button>
+                <div class="hint">God Bless You As You Check-In</div>
             </div>
 
             <!-- Check-in Form -->
@@ -134,7 +128,6 @@
                     <label>Category *</label>
                     <select id="category" required>
                         <option value="">Select</option>
-                        <option value="Children">Children</option>
                         <option value="Youth">Youth</option>
                         <option value="Married">Married</option>
                         <option value="Single">Single</option>
@@ -160,14 +153,6 @@
                     </select>
                 </div>
 
-                <!-- Optional: Send confirmation toggle -->
-                <div class="form-group" style="margin-bottom: 0.8rem;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="sendConfirmation" checked>
-                        <span style="font-weight: normal;">Send me a thank‑you SMS/email (if phone/email provided)</span>
-                    </label>
-                </div>
-
                 <button type="submit" class="btn-checkin">
                     <i class="fa-regular fa-calendar-check"></i> Check In
                 </button>
@@ -190,7 +175,7 @@
             <!-- Service Times -->
             <div class="service-times">
                 <strong>Service Times</strong><br>
-                Sunday: 8 AM &amp; 10 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; Prayer Meeting: Fri 6 PM
+                Worship Service: Sunday 9 AM &nbsp;·&nbsp; Bible Study: Wed 7 PM &nbsp;·&nbsp; 
             </div>
         </div>
 
@@ -302,7 +287,7 @@
         if (memberId) loadMemberById(memberId);
 
         // --- Today's Service ---
-        const serviceMap = ['Sunday Service', 'Sunday Service', 'Sunday Service', 'Sunday Service', 'Bible Study', 'Prayer Meeting', 'Midweek Service'];
+        const serviceMap = ['Sunday Service', 'No Service', 'No Service', 'Midweek Service', 'No Service', 'No Service', ''];
         document.getElementById('currentService').textContent = serviceMap[new Date().getDay()] || 'Sunday Service';
 
         // --- Show / hide dark confirmation ---
@@ -358,42 +343,6 @@
             } catch (err) {
                 const msg = err.response?.data?.message || 'Check-in failed. Please try again.';
                 showToast(msg, 'error');
-            }
-        });
-
-        // --- QR Scanner Toggle ---
-        document.getElementById('toggleScannerBtn').addEventListener('click', function() {
-            const readerDiv = document.getElementById('qrReader');
-            if (isScanning) {
-                if (html5QrCode) {
-                    html5QrCode.stop().then(() => {
-                        readerDiv.style.display = 'none';
-                        isScanning = false;
-                        this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
-                    }).catch(() => {});
-                }
-            } else {
-                readerDiv.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-stop"></i> Stop Scanning';
-                html5QrCode = new Html5Qrcode("qrReader");
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: 250 },
-                    (decodedText) => {
-                        const match = decodedText.match(/[?&]memberId=([^&]+)/);
-                        if (match && match[1]) {
-                            loadMemberById(match[1]);
-                            html5QrCode.stop();
-                            readerDiv.style.display = 'none';
-                            isScanning = false;
-                            this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
-                            showToast('Member loaded! Complete the form.');
-                        } else {
-                            showToast('Invalid QR code – no member ID found.', 'error');
-                        }
-                    },
-                    (error) => console.warn(error)
-                ).then(() => { isScanning = true; }).catch(err => console.error(err));
             }
         });
 
