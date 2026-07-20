@@ -456,13 +456,13 @@
 
         // Update stats grid (keep your existing cards)
         statsGrid.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Today's Total</h3><p class="text-2xl font-bold">${today.total || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Children</h3><p class="text-2xl font-bold">${today.byCategory?.Children || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Youth</h3><p class="text-2xl font-bold">${today.byCategory?.Youth || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Married</h3><p class="text-2xl font-bold">${today.byCategory?.Married || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Single</h3><p class="text-2xl font-bold">${today.byCategory?.Single || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Male</h3><p class="text-2xl font-bold">${today.byGender?.Male || 0}</p></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 dark:text-gray-400 text-sm">Female</h3><p class="text-2xl font-bold">${today.byGender?.Female || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Today's Total</h3><p class="text-2xl font-bold">${today.total || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Children</h3><p class="text-2xl font-bold">${today.byCategory?.Children || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Youth</h3><p class="text-2xl font-bold">${today.byCategory?.Youth || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Married</h3><p class="text-2xl font-bold">${today.byCategory?.Married || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Single</h3><p class="text-2xl font-bold">${today.byCategory?.Single || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Male</h3><p class="text-2xl font-bold">${today.byGender?.Male || 0}</p></div>
+            <div class="bg-white white:bg-gray-800 rounded-2xl p-4 shadow-sm stat-card"><h3 class="text-gray-500 white:text-gray-400 text-sm">Female</h3><p class="text-2xl font-bold">${today.byGender?.Female || 0}</p></div>
         `;
 
         // Update the new stats row
