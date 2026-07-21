@@ -499,14 +499,14 @@
         document.getElementById('checkinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
-                name: document.getElementById('name').value.trim(),
-                category: document.getElementById('category').value,
-                gender: document.getElementById('gender').value,
-                phone: document.getElementById('phone').value.trim(),
-                serviceType: document.getElementById('serviceType').value,
-                date: new Date().toISOString(),
-                notes: 'Self check‑in'
-            };
+    name: document.getElementById('name').value.trim(),
+    category: document.getElementById('category').value,
+    gender: document.getElementById('gender').value,
+    phone: document.getElementById('phone').value.trim(),
+    serviceType: document.getElementById('serviceType').value,
+    date: new Date().toISOString().split('T')[0], // 👈 Send only the date part
+    notes: 'Self check‑in'
+};
             if (!data.name || !data.category || !data.gender || !data.serviceType) {
                 showToast('Please fill all required fields.', 'error');
                 return;
