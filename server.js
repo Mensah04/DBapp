@@ -113,22 +113,21 @@ const attendanceSchema = new mongoose.Schema({
             message: props => `${props.value} is not a valid phone number!`
         }
     },
-   date: {
-    type: Date,
-    required: true,
-    set: function(v) {
-        if (typeof v === 'string') {
-            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                // Store as local date (without timezone offset)
-                const parts = v.split('-');
-                return new Date(parts[0], parts[1] - 1, parts[2]);
+    date: {
+        type: Date,
+        required: true,
+        set: function(v) {
+            if (typeof v === 'string') {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                    const parts = v.split('-');
+                    return new Date(parts[0], parts[1] - 1, parts[2]);
+                }
+                return new Date(v);
             }
-            return new Date(v);
+            return v;
         }
-        return v;
-    }
-}
-    serviceType: {
+    },  
+    serviceType: {  
         type: String,
         enum: ['Sunday Service', 'Bible Study', 'Prayer Meeting', 'Special Program', 'Midweek Service'],
         default: 'Sunday Service'
