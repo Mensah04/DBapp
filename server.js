@@ -565,7 +565,7 @@ function getFollowUpTrend(followUps, days = 30) {
 }
 
 // Attendance routes
-app.post('/api/attendance', isAuthenticated, authorize('admin', 'secretary'), async (req, res) => {
+app.post('/api/attendance', async (req, res) => {
     console.log('POST /api/attendance:', req.body);
     try {
         let { name, phone, date, serviceType, category, gender, notes } = req.body;
