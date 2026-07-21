@@ -646,25 +646,25 @@ app.get('/api/attendance', isAuthenticated, async (req, res) => {
         if (category) query.category = category;
         if (serviceType) query.serviceType = serviceType;
         if (checkedIn !== undefined) query.checkedIn = checkedIn === 'true';
-        if (date) {
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-            query.date = { $gte: startOfDay, $lte: endOfDay };
-        } else if (startDate || endDate) {
-            query.date = {};
-            if (startDate) {
-                const start = new Date(startDate);
-                start.setHours(0, 0, 0, 0);
-                query.date.$gte = start;
-            }
-            if (endDate) {
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
-                query.date.$lte = end;
-            }
-        }
+       if (date) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    query.date = { $gte: startOfDay, $lte: endOfDay };
+} else if (startDate || endDate) {
+    query.date = {};
+    if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        query.date.$gte = start;
+    }
+    if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.date.$lte = end;
+    }
+}
         const skip = (page - 1) * limit;
         const attendance = await Attendance.find(query)
             .sort({ date: -1, checkedInTime: -1 })
@@ -693,30 +693,36 @@ app.get('/api/attendance/stats', isAuthenticated, async (req, res) => {
         const now = new Date();
 
         if (range === 'today') {
+            // Use LOCAL time (not UTC)
             startDate = new Date(now);
-            startDate.setUTCHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
             endDate = new Date(startDate);
-            endDate.setUTCDate(endDate.getUTCDate() + 1);
+            endDate.setDate(endDate.getDate() + 1);
         } else if (range === 'week') {
-            // Last 7 days from today
+            // Last 7 days from today (LOCAL time)
             startDate = new Date(now);
-            startDate.setUTCDate(startDate.getUTCDate() - 7);
-            startDate.setUTCHours(0, 0, 0, 0);
+            startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
             endDate = new Date(now);
-            endDate.setUTCHours(23, 59, 59, 999);
+            endDate.setHours(23, 59, 59, 999);
         } else {
             return res.status(400).json({ error: 'Invalid range' });
         }
+
+        console.log('📊 Local date range:', {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+        });
 
         const records = await Attendance.find({
             date: { $gte: startDate, $lt: endDate }
         });
 
-        // For today's stats (same as before)
+        // For today's stats (LOCAL time)
         const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
-        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+        tomorrow.setDate(tomorrow.getDate() + 1);
         const todayRecords = records.filter(r => r.date >= today && r.date < tomorrow);
 
         const byCategory = { Children: 0, Youth: 0, Married: 0, Single: 0, Elder: 0 };
@@ -726,12 +732,12 @@ app.get('/api/attendance/stats', isAuthenticated, async (req, res) => {
             if (record.gender) byGender[record.gender] = (byGender[record.gender] || 0) + 1;
         });
 
-        // Get last week's total (same day last week)
+        // Get last week's total (same day last week - LOCAL time)
         const lastWeekStart = new Date(now);
-        lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
-        lastWeekStart.setUTCHours(0, 0, 0, 0);
+        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+        lastWeekStart.setHours(0, 0, 0, 0);
         const lastWeekEnd = new Date(lastWeekStart);
-        lastWeekEnd.setUTCDate(lastWeekEnd.getUTCDate() + 1);
+        lastWeekEnd.setDate(lastWeekEnd.getDate() + 1);
         const lastWeekRecords = await Attendance.find({
             date: { $gte: lastWeekStart, $lt: lastWeekEnd }
         });
@@ -743,7 +749,7 @@ app.get('/api/attendance/stats', isAuthenticated, async (req, res) => {
                 byGender
             },
             lastWeekTotal: lastWeekRecords.length,
-            weeklyTrend: records.length // optional
+            weeklyTrend: records.length
         });
     } catch (error) {
         console.error('Stats error:', error);
